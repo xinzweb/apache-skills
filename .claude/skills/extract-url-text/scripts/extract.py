@@ -25,6 +25,17 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
+ALLOWED_SCHEMES = {"http", "https"}
+
+
+def require_http_scheme(url):
+    """Reject file://, ftp://, data:, etc. — urllib supports all of them by
+    default, which turns a bare urlopen(url) into a local-file-disclosure /
+    SSRF vector for a script whose whole point is fetching public web pages."""
+    scheme = urlparse(url).scheme.lower()
+    if scheme not in ALLOWED_SCHEMES:
+        raise RuntimeError(f"Refusing non-http(s) URL scheme '{scheme}' for {url!r}")
+
 SKIP_TAGS = {"script", "style", "noscript", "template", "svg", "nav", "footer", "header", "aside"}
 BLOCK_TAGS = {
     "p", "div", "br", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6",
@@ -76,6 +87,7 @@ class TextExtractor(HTMLParser):
 
 
 def check_robots_allowed(url, user_agent, timeout=10):
+    require_http_scheme(url)
     parsed = urlparse(url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
     rp = urllib.robotparser.RobotFileParser()
@@ -84,14 +96,24 @@ def check_robots_allowed(url, user_agent, timeout=10):
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
         rp.parse(raw.splitlines())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            # No robots.txt published — RFC 9309: no restrictions apply.
+            return True
+        # A real server error (5xx, 403, ...) fetching robots.txt is a
+        # reason to hold off, not a reason to assume no policy exists —
+        # RFC 9309 treats 5xx as "assume fully disallowed" for exactly
+        # this reason. Fail closed rather than open.
+        return False
     except Exception:
-        # No robots.txt, or it's unreachable — default to allowed rather
-        # than blocking on an absent file.
-        return True
+        # DNS failure, timeout, connection reset, etc. — can't tell
+        # whether a policy exists. Same fail-closed reasoning as above.
+        return False
     return rp.can_fetch(user_agent, url)
 
 
 def fetch(url, timeout=15, retries=2):
+    require_http_scheme(url)
     headers = {
         "User-Agent": USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -105,21 +127,44 @@ def fetch(url, timeout=15, retries=2):
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read()
                 encoding = (resp.headers.get("Content-Encoding") or "").lower()
-                if encoding == "gzip":
+                if encoding in ("", "identity"):
+                    pass
+                elif encoding == "gzip":
                     raw = gzip.decompress(raw)
                 elif encoding == "deflate":
                     try:
                         raw = zlib.decompress(raw)
                     except zlib.error:
                         raw = zlib.decompress(raw, -zlib.MAX_WBITS)
+                else:
+                    # We only ever advertise gzip/deflate in Accept-Encoding;
+                    # a server sending anything else (e.g. brotli) is either
+                    # non-compliant or being proxied unexpectedly. Fail loud
+                    # rather than decode compressed bytes as if they were text.
+                    raise RuntimeError(f"Unsupported Content-Encoding '{encoding}' for {url}")
                 content_type = resp.headers.get("Content-Type", "")
-                charset_match = re.search(r"charset=([\w-]+)", content_type)
+                charset_match = re.search(r'charset=["\']?([\w-]+)', content_type, re.IGNORECASE)
                 charset = charset_match.group(1) if charset_match else "utf-8"
-                return raw.decode(charset, errors="replace"), content_type, resp.geturl()
+                try:
+                    text = raw.decode(charset, errors="replace")
+                except LookupError:
+                    # Server declared a charset name Python doesn't recognize
+                    # — fall back to the most broadly compatible default
+                    # rather than crashing on a server misconfiguration.
+                    text = raw.decode("utf-8", errors="replace")
+                return text, content_type, resp.geturl()
+        except zlib.error as e:
+            # Both the direct and raw-deflate decompress attempts failed —
+            # not retryable, the response body itself is bad.
+            raise RuntimeError(f"Failed to decompress deflate response from {url}: {e}")
         except urllib.error.HTTPError as e:
             if 400 <= e.code < 500:
                 raise RuntimeError(f"HTTP {e.code} {e.reason} for {url} (client error, not retrying)")
             last_err = e
+        except ValueError as e:
+            # Malformed URL (e.g. missing scheme entirely) — retrying won't
+            # fix it.
+            raise RuntimeError(f"Invalid URL {url!r}: {e}")
         except (urllib.error.URLError, OSError) as e:
             last_err = e
         if attempt < retries:
@@ -134,14 +179,19 @@ def main():
     parser.add_argument("--ignore-robots", action="store_true", help="Skip the robots.txt allow-check. Use only with a specific reason.")
     args = parser.parse_args()
 
-    if not args.ignore_robots and not check_robots_allowed(args.url, USER_AGENT):
-        print(f"BLOCKED: robots.txt disallows this path for our user-agent — not fetching {args.url}", file=sys.stderr)
-        sys.exit(2)
-
     try:
+        if not args.ignore_robots and not check_robots_allowed(args.url, USER_AGENT):
+            print(f"BLOCKED: robots.txt disallows this path for our user-agent — not fetching {args.url}", file=sys.stderr)
+            sys.exit(2)
         html, content_type, final_url = fetch(args.url)
     except RuntimeError as e:
         print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        # Safety net: no exception type should ever escape as a raw
+        # traceback — the documented contract is "stderr explains why,
+        # non-zero exit," full stop.
+        print(f"ERROR: unexpected {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(1)
 
     if content_type and "html" not in content_type and "xml" not in content_type:
