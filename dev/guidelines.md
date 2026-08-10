@@ -8,6 +8,27 @@ These guidelines apply to all work in the apache-skills project.
 - **Idempotent, sourceable, function-wrapped** bash scripts
 - **Fix the root cause, not the symptom**
 
+## Repo Layout
+
+- `.claude/skills/` — Claude-facing skill definitions (SKILL.md + scripts).
+  Fixed location, auto-discovered by Claude Code — never relocate a skill
+  out of here even if its subject matter has a `project/<name>/` folder.
+- `project/<name>/` — human-facing material for a specific Apache project
+  this repo covers (career plans, self-assessments, issue-triage notes).
+  One folder per project (e.g. `project/cloudberry/`).
+- `dev/` — this repo's own TODO lifecycle (not project-specific).
+
+## Content & Privacy Guidelines
+
+This repo is public and its subject matter is other people's projects — hold every file to this bar before committing:
+
+- **No secrets.** No API keys, tokens, passwords, or `.env` contents — ever, in any file.
+- **No PII beyond self-disclosure.** Never add another person's private contact info (personal email, phone, address), even if it surfaced during research. Official ASF mailing-list addresses (`dev@`, `private@`, `secretary@`, etc.) are public infrastructure, not PII, and are fine to reference. Your own already-publicly-listed info (e.g. an ASF roster entry) is fine to include about yourself — that allowance doesn't extend to other individuals.
+- **Cite, don't hoard.** Describe another project's process and link to the live official source rather than reproducing it wholesale — pages change, and a stale mirror reads as more authoritative than it is.
+- **No fabricated claims about real people or projects.** Verify against a live source before writing a name, role, URL, or process detail into a committed file — see `_cloudberry/README.md`'s sourcing for the pattern.
+- **Apache-brand-friendly.** Use official project naming (e.g. "Apache Cloudberry (Incubating)", not "Cloudberry"), never imply ASF endorsement of this repo or its skills, and don't reproduce ASF/project logos or trademarks without checking ASF's trademark policy first.
+- **Prefer roles over names.** To illustrate a governance tier (e.g. "who's on the Board"), link to the live official roster instead of hardcoding specific individuals — those rosters turn over annually, and a stale name reads as a factual claim about someone no longer in that role.
+
 ## Branch and Merge Policy
 
 The `main` branch is the source of truth. Never push directly to `main`.
