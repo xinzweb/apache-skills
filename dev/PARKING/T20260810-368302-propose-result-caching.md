@@ -17,12 +17,16 @@ proposal. **When T20260810-177613 completes**: `git mv` this back to
 ## Confirmed as of 2026-08-10
 
 No existing GitHub issue, GitHub Discussion, or `dev@` mailing-list thread
-covers query/results caching for `apache/cloudberry` — checked via issue
-search, Discussion search (not even in a Discussion title), a web search of
-the mail archive, and the roadmap Discussion (#868) body. The closest
-mentions found are unrelated: ORCA's internal plan cache, a PostGIS
-memory-corruption bug, routine merge commits. This is a genuinely open
-topic.
+covers query/results caching for `apache/cloudberry`. This is a genuinely
+open topic — checked via:
+
+- Issue search
+- Discussion search (not even in a Discussion title)
+- A web search of the mail archive
+- The roadmap Discussion (#868) body
+
+Closest mentions found are unrelated: ORCA's internal plan cache, a
+PostGIS memory-corruption bug, routine merge commits.
 
 ## Research targets (not started)
 
