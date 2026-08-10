@@ -36,6 +36,24 @@ def require_http_scheme(url):
     if scheme not in ALLOWED_SCHEMES:
         raise RuntimeError(f"Refusing non-http(s) URL scheme '{scheme}' for {url!r}")
 
+
+class SchemeSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """The default redirect handler follows http(s)->ftp redirects, which
+    would let a malicious/compromised https:// origin redirect us into
+    fetching from an arbitrary ftp:// host after require_http_scheme() has
+    already passed on the original input URL. Refuse anything that isn't
+    http(s) at every hop, not just the first one."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urlparse(newurl).scheme.lower() not in ALLOWED_SCHEMES:
+            raise urllib.error.URLError(f"Refusing redirect to non-http(s) URL: {newurl!r}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _safe_opener():
+    return urllib.request.build_opener(SchemeSafeRedirectHandler)
+
+
 SKIP_TAGS = {"script", "style", "noscript", "template", "svg", "nav", "footer", "header", "aside"}
 BLOCK_TAGS = {
     "p", "div", "br", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6",
@@ -93,21 +111,22 @@ def check_robots_allowed(url, user_agent, timeout=10):
     rp = urllib.robotparser.RobotFileParser()
     try:
         req = urllib.request.Request(robots_url, headers={"User-Agent": user_agent})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with _safe_opener().open(req, timeout=timeout) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
         rp.parse(raw.splitlines())
     except urllib.error.HTTPError as e:
-        if e.code == 404:
-            # No robots.txt published — RFC 9309: no restrictions apply.
+        if 400 <= e.code < 500:
+            # RFC 9309 §2.3.1.3 "Unavailable": ANY 4xx (401/403/404/429/...)
+            # means no robots.txt policy is being enforced — crawlers may
+            # access freely. Not just 404.
             return True
-        # A real server error (5xx, 403, ...) fetching robots.txt is a
-        # reason to hold off, not a reason to assume no policy exists —
-        # RFC 9309 treats 5xx as "assume fully disallowed" for exactly
-        # this reason. Fail closed rather than open.
+        # 5xx / "Unreachable": assume complete disallow per the same RFC —
+        # a server error fetching robots.txt is a reason to hold off, not
+        # a reason to assume no policy exists.
         return False
     except Exception:
         # DNS failure, timeout, connection reset, etc. — can't tell
-        # whether a policy exists. Same fail-closed reasoning as above.
+        # whether a policy exists. Same fail-closed reasoning as 5xx above.
         return False
     return rp.can_fetch(user_agent, url)
 
@@ -124,7 +143,7 @@ def fetch(url, timeout=15, retries=2):
     for attempt in range(retries + 1):
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with _safe_opener().open(req, timeout=timeout) as resp:
                 raw = resp.read()
                 encoding = (resp.headers.get("Content-Encoding") or "").lower()
                 if encoding in ("", "identity"):
