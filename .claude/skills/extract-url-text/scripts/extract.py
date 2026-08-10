@@ -105,6 +105,11 @@ class TextExtractor(HTMLParser):
 
 
 def check_robots_allowed(url, user_agent, timeout=10):
+    """Returns (allowed, reason). reason is None when allowed, otherwise a
+    short human-readable explanation — distinguishing an explicit robots.txt
+    disallow rule from a fail-closed default when we couldn't verify at all,
+    so the caller doesn't tell the user "robots.txt disallows this" when the
+    real cause was e.g. a DNS failure or a dead domain."""
     require_http_scheme(url)
     parsed = urlparse(url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
@@ -119,16 +124,18 @@ def check_robots_allowed(url, user_agent, timeout=10):
             # RFC 9309 §2.3.1.3 "Unavailable": ANY 4xx (401/403/404/429/...)
             # means no robots.txt policy is being enforced — crawlers may
             # access freely. Not just 404.
-            return True
+            return True, None
         # 5xx / "Unreachable": assume complete disallow per the same RFC —
         # a server error fetching robots.txt is a reason to hold off, not
         # a reason to assume no policy exists.
-        return False
-    except Exception:
+        return False, f"couldn't verify robots.txt (HTTP {e.code} fetching it) — failing closed rather than assuming no policy exists"
+    except Exception as e:
         # DNS failure, timeout, connection reset, etc. — can't tell
         # whether a policy exists. Same fail-closed reasoning as 5xx above.
-        return False
-    return rp.can_fetch(user_agent, url)
+        return False, f"couldn't verify robots.txt ({type(e).__name__}) — failing closed rather than assuming no policy exists"
+    if rp.can_fetch(user_agent, url):
+        return True, None
+    return False, "robots.txt explicitly disallows this path for our user-agent"
 
 
 def fetch(url, timeout=15, retries=2):
@@ -207,9 +214,11 @@ def main():
     # BaseException rather than Exception, so it still passes through
     # `except Exception` untouched below.
     try:
-        if not args.ignore_robots and not check_robots_allowed(args.url, USER_AGENT):
-            print(f"BLOCKED: robots.txt disallows this path for our user-agent — not fetching {args.url}", file=sys.stderr)
-            sys.exit(2)
+        if not args.ignore_robots:
+            allowed, reason = check_robots_allowed(args.url, USER_AGENT)
+            if not allowed:
+                print(f"BLOCKED: {reason} — not fetching {args.url}", file=sys.stderr)
+                sys.exit(2)
         html, content_type, final_url = fetch(args.url)
 
         if content_type and "html" not in content_type and "xml" not in content_type:
