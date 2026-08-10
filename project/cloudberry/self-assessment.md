@@ -82,8 +82,9 @@ q='repo:apache/cloudberry author:xinzweb'` returns **27 commits**,
 - Plus doc/build fixes (README updates, Vagrantfile, minidump
   instructions)
 
-This also lines up with the record already in `_cloudberry/README.md`'s
-sourcing: the original incubation proposal
+This also lines up with the record already in
+`.claude/skills/_cloudberry/README.md`'s sourcing: the original
+incubation proposal
 (cwiki.apache.org/confluence/display/INCUBATOR/CloudberryProposal) lists
 **Shine Zhang among the 22 Initial Committers** named at founding — PPMC
 status here was granted as a founding member on the strength of this
