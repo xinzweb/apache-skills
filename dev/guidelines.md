@@ -27,7 +27,7 @@ This repo is public and its subject matter is other people's projects — hold e
 - **Cite, don't hoard.** Describe another project's process and link to the live official source rather than reproducing it wholesale — pages change, and a stale mirror reads as more authoritative than it is.
 - **No fabricated claims about real people or projects.** Verify against a live source before writing a name, role, URL, or process detail into a committed file — see `_cloudberry/README.md`'s sourcing for the pattern.
 - **Apache-brand-friendly.** Use official project naming (e.g. "Apache Cloudberry (Incubating)", not "Cloudberry"), never imply ASF endorsement of this repo or its skills, and don't reproduce ASF/project logos or trademarks without checking ASF's trademark policy first.
-- **Prefer roles over names.** To illustrate a governance tier (e.g. "who's on the Board"), link to the live official roster instead of hardcoding specific individuals — those rosters turn over annually, and a stale name reads as a factual claim about someone no longer in that role.
+- **Prefer roles over names — for *current-status* claims.** To illustrate a governance tier (e.g. "who's on the Board"), link to the live official roster instead of hardcoding specific individuals — those rosters turn over annually, and a stale name reads as a factual claim about someone no longer in that role. This does **not** apply to citing a specific, permanently-archived historical event (a real vote, an announcement, a merged PR) by name and date — that's a fixed fact from a public record, not a claim about someone's role today, and doesn't go stale the way "X currently holds role Y" does.
 
 ## Branch and Merge Policy
 
