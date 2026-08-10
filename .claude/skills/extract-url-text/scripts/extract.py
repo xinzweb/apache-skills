@@ -198,11 +198,38 @@ def main():
     parser.add_argument("--ignore-robots", action="store_true", help="Skip the robots.txt allow-check. Use only with a specific reason.")
     args = parser.parse_args()
 
+    # Everything from here on — fetch AND extraction/output — is covered by
+    # one safety net. A prior version of this fix only wrapped the fetch
+    # call, which left UnicodeEncodeError (e.g. an emoji/non-ASCII title
+    # printed where stdout isn't UTF-8 — a real, reproducible crash, not
+    # hypothetical) and any HTMLParser failure free to crash with a raw
+    # traceback. sys.exit() raises SystemExit, which subclasses
+    # BaseException rather than Exception, so it still passes through
+    # `except Exception` untouched below.
     try:
         if not args.ignore_robots and not check_robots_allowed(args.url, USER_AGENT):
             print(f"BLOCKED: robots.txt disallows this path for our user-agent — not fetching {args.url}", file=sys.stderr)
             sys.exit(2)
         html, content_type, final_url = fetch(args.url)
+
+        if content_type and "html" not in content_type and "xml" not in content_type:
+            text, title = html, ""
+        else:
+            extractor = TextExtractor()
+            extractor.feed(html)
+            text, title = extractor.get_text(), extractor.get_title()
+
+        if final_url != args.url:
+            print(f"[redirected to: {final_url}]", file=sys.stderr)
+
+        if title:
+            print(f"# {title}\n")
+
+        if args.max_chars and len(text) > args.max_chars:
+            total = len(text)
+            text = text[: args.max_chars] + f"\n\n...[truncated at {args.max_chars} chars; total was {total}]"
+
+        print(text)
     except RuntimeError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
@@ -212,25 +239,6 @@ def main():
         # non-zero exit," full stop.
         print(f"ERROR: unexpected {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(1)
-
-    if content_type and "html" not in content_type and "xml" not in content_type:
-        text, title = html, ""
-    else:
-        extractor = TextExtractor()
-        extractor.feed(html)
-        text, title = extractor.get_text(), extractor.get_title()
-
-    if final_url != args.url:
-        print(f"[redirected to: {final_url}]", file=sys.stderr)
-
-    if title:
-        print(f"# {title}\n")
-
-    if args.max_chars and len(text) > args.max_chars:
-        total = len(text)
-        text = text[: args.max_chars] + f"\n\n...[truncated at {args.max_chars} chars; total was {total}]"
-
-    print(text)
 
 
 if __name__ == "__main__":
