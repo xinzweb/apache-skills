@@ -1,9 +1,11 @@
 ---
-status: Open
+status: Coding
 estimation: 4h
 priority: Medium
 source: conversation 2026-08-10/11 — user asked for a thorough search of greenplum-db org history
 description: Fully catalog Shine Zhang's Greenplum-era contributions across greenplum-db repos for project/cloudberry/self-assessment.md
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
+scheduled: 2026-08-10
 ---
 
 # T20260810-367141: Catalog Greenplum-era legacy contributions
