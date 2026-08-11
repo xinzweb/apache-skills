@@ -1,0 +1,13 @@
+{
+  // MD013 (line-length) is incompatible with dev/TODO/queue.md's required
+  // single-line-per-entry format (`- [T{id}](T{id}-{slug}.md): {title}`) —
+  // long task IDs + markdown links routinely exceed any reasonable column
+  // limit, and wrapping the entry across lines breaks the /todo skill's
+  // line-based parser. Disabled globally rather than per-file, since long
+  // lines in prose (URLs, code spans) are common elsewhere too and rarely
+  // worth the noise.
+  "config": {
+    "default": true,
+    "MD013": false
+  }
+}

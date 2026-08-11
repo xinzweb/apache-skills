@@ -21,7 +21,7 @@ replace the community that decides on it.
 | **Name** | Shine Zhang (`xinzweb`) |
 | **Class** | PPMC Member, Apache Cloudberry (Incubating) |
 | **Title Level** | 4 — PPMC Member *(real, doesn't decay; founding-member grant, see Legacy Contribution)* |
-| **Legacy Bonus** | 253 direct-author commits + 45 co-author + 4 reviewer credits, 2016-2023 (Greenplum era, 3 confirmed identities — see below) |
+| **Legacy Bonus** | 238 distinct commits (209 direct-author + 25 co-author-only + 4 reviewer-only, deduplicated by SHA), 2016-2023 (Greenplum era, 3 confirmed identities — see below) |
 | **Activity Streak** | 0 weeks *(starts today — see Findings)* |
 | **XP** | 0 *(tracking starts 2026-08-10 — past contributions aren't back-filled)* |
 | **Next Title Level** | N/A upward from PPMC without a project-wide event (graduation) — see `career-path.md`'s foundation-wide track (ASF Member) for the next *personal* tier instead |
@@ -71,34 +71,42 @@ entirely but are literally still in `apache/cloudberry`'s `git log`
 today (`gh api search/commits -f q='repo:apache/cloudberry
 author:xinzweb'`), 2016-01 through 2017-11.
 
-Separately, a 2026-08-10/11 search across the whole `greenplum-db`
-GitHub org (`gh api search/commits`, full detail and remaining work in
+A 2026-08-10/11 search across the whole `greenplum-db` GitHub org (`gh
+api search/commits`, full methodology and raw numbers in
 `dev/TODO/T20260810-367141`) found a much larger body of work under
-**three confirmed identities**, all the same person (user-confirmed):
+**three confirmed identities**, all the same person (user-confirmed).
+Numbers below are **deduplicated by SHA** — the same commit can appear
+under more than one repo because several `greenplum-db` repos share
+donated/forked history, so a naive per-identity search count
+double-counts:
 
-- GitHub `xinzweb` — direct author on 48 commits
-- `xzhang@pivotal.io` (Pivotal era) — direct author on **181 commits**.
+- GitHub `xinzweb` — **34 unique commits**
+- `xzhang@pivotal.io` (Pivotal era) — **151 unique commits**.
   Independently verified, not just name-matched: the merge commit for a
   PR literally named `xinzweb/enable_ccache` (`gporca-archive` `b53c1acd`)
   has this email as the actual PR branch's commit author — the branch was
   pushed from the `xinzweb` GitHub account.
-- `zhxin@vmware.com` (VMware era, post-Pivotal-acquisition) — direct
-  author on **24 commits**, 2020, almost entirely RPM/Debian packaging and
-  Concourse CI release engineering — a materially different kind of work
-  than the 2016-era ORCA/gpdb code fixes.
+- `zhxin@vmware.com` (VMware era, post-Pivotal-acquisition) — **24 unique
+  commits**, 2020. Spot-checked for content, not just titles: real
+  RPM/Debian packaging and Concourse CI release-engineering work (e.g. a
+  4-file, +119/-85 change co-authored with two other VMware engineers) —
+  a materially different kind of work than the 2016-era ORCA/gpdb code
+  fixes.
 
-**Note:** `apache/cloudberry` lives in the `apache` GitHub org, not
-`greenplum-db`, so this org-wide search did not cover it — whether the
-27-commit figure above is a subset of the 253 below (plausible, since
-both trace the same donated history) or a separate count is **not yet
-verified by SHA** (tracked in `dev/TODO/T20260810-367141`). Treat the two
-numbers as two separate findings, not one combined total, until that's
-checked.
+**Resolved by direct SHA comparison**: the 27 `apache/cloudberry`
+commits above are an **exact subset** of the 34 `xinzweb` commits here
+(27/27 match) — not an additional, separate count. Don't add the two
+numbers together.
 
-The `greenplum-db`-org totals:
+The `greenplum-db`-org totals (deduplicated):
 
-- **253 direct-author commits**, plus 45 `Co-authored-by` and 4
-  `Reviewed-by` credits
+- **209 unique direct-author commits** (34 + 151 + 24 above)
+- **+25 unique commits** credited only as `Co-authored-by` (45 raw hits,
+  20 were the same SHA already counted as direct-author — likely
+  squash-merge duplication)
+- **+4 unique commits** credited only as `Reviewed-by` (no overlap with
+  either set above)
+- **238 total distinct commits** touched in some capacity
 - Spanning **2016 through November 2023** — seven-plus years
 - Across `gpdb-archive`, `gporca-archive`, `gp-xerces-archive` (not
   previously known to the user — surfaced by this search), and
@@ -108,8 +116,9 @@ The `greenplum-db`-org totals:
   about 11 months before the Cloudberry ICLA (2024-10-19)
 - **`pxf-archive`, which the user specifically expected to have
   contributions in, came back with zero hits** across every identity
-  checked — flagged rather than assumed away; either a 4th identity
-  exists that hasn't been found yet, or the expectation doesn't hold
+  checked, including several additional email-variant guesses — flagged
+  rather than assumed away; either a 4th identity exists that hasn't
+  been found, or the expectation doesn't hold
 
 Highlights from the `apache/cloudberry` slice (2016-01 through 2017-11):
 
