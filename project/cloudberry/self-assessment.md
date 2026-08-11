@@ -21,7 +21,7 @@ replace the community that decides on it.
 | **Name** | Shine Zhang (`xinzweb`) |
 | **Class** | PPMC Member, Apache Cloudberry (Incubating) |
 | **Title Level** | 4 — PPMC Member *(real, doesn't decay; founding-member grant, see Legacy Contribution)* |
-| **Legacy Bonus** | 27 commits, 2016-2017 (Greenplum era — inherited into `apache/cloudberry`'s git history) |
+| **Legacy Bonus** | 253 direct-author commits + 45 co-author + 4 reviewer credits, 2016-2023 (Greenplum era, 3 confirmed identities — see below) |
 | **Activity Streak** | 0 weeks *(starts today — see Findings)* |
 | **XP** | 0 *(tracking starts 2026-08-10 — past contributions aren't back-filled)* |
 | **Next Title Level** | N/A upward from PPMC without a project-wide event (graduation) — see `career-path.md`'s foundation-wide track (ASF Member) for the next *personal* tier instead |
@@ -62,14 +62,41 @@ and cross-checked against `gh` — not guessed:
 
 ---
 
-## Legacy contribution (Greenplum era, 2016-2017)
+## Legacy contribution (Greenplum era, 2016-2023)
 
 Apache Cloudberry's codebase is derived from open-source Greenplum
 Database, and the donation carried Greenplum's git history along with it —
-so this predates the ASF project entirely but is literally still in
-`apache/cloudberry`'s `git log` today. `gh api search/commits -f
-q='repo:apache/cloudberry author:xinzweb'` returns **27 commits**,
-2016-01 through 2017-11, including real engine-level and infra work:
+so the smaller slice of this (27 commits) predates the ASF project
+entirely but is literally still in `apache/cloudberry`'s `git log` today.
+The full picture is much bigger than that slice: a 2026-08-10/11 search
+across the whole `greenplum-db` GitHub org (`gh api search/commits`,
+full detail and remaining work in `dev/TODO/T20260810-367141`) found
+**three confirmed identities**, all the same person (user-confirmed):
+
+- GitHub `xinzweb` — direct author on 48 commits
+- `xzhang@pivotal.io` (Pivotal era) — direct author on **181 commits**.
+  Independently verified, not just name-matched: the merge commit for a
+  PR literally named `xinzweb/enable_ccache` (`gporca-archive` `b53c1acd`)
+  has this email as the actual PR branch's commit author — the branch was
+  pushed from the `xinzweb` GitHub account.
+- `zhxin@vmware.com` (VMware era, post-Pivotal-acquisition) — direct
+  author on **24 commits**, 2020, almost entirely RPM/Debian packaging and
+  Concourse CI release engineering — a materially different kind of work
+  than the 2016-era ORCA/gpdb code fixes.
+
+Combined: **253 direct-author commits**, plus 45 `Co-authored-by` and 4
+`Reviewed-by` credits, spanning **2016 through November 2023** — seven-plus
+years, not two — across `gpdb-archive`, `gporca-archive`, `gp-xerces-archive`
+(not previously known to the user — surfaced by this search), and
+`greenplum-database-release-archive`. Notably: a `Reviewed-by: Xin Zhang
+<zhxin@vmware.com>` credit on a November 2023 `gpdb-archive` commit is the
+most recent confirmed activity found anywhere in this legacy search — barely
+a year before the Cloudberry ICLA. **`pxf-archive`, which the user
+specifically expected to have contributions in, came back with zero hits**
+across every identity checked — flagged rather than assumed away; either a
+4th identity exists that hasn't been found yet, or the expectation doesn't
+hold. Highlights from the smaller, already-detailed `apache/cloudberry`
+slice (2016-01 through 2017-11):
 
 - `Fix implied predicates under limit subquery [#129871531] (#125)` —
   2016-11-28, a query-planner correctness fix
@@ -108,8 +135,9 @@ specifically about **recency**, not competence:
   confirmed `dev@`/`private@` post beyond onboarding administrivia (see
   Findings above).
 
-**So the honest read**: this isn't "prove you can do the work" — 2016-2017
-already proved that, decisively. It's "the current project doesn't see you
+**So the honest read**: this isn't "prove you can do the work" — 2016-2023
+already proved that, decisively, and repeatedly. It's "the current project
+doesn't see you
 very often." Those call for different fixes. Proving competence again
 would be redundant; the quest log below is deliberately about *presence* —
 small, visible, recent actions — not about re-establishing technical
