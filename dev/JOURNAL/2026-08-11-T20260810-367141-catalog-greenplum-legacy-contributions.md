@@ -4,7 +4,6 @@ estimation: 4h
 priority: Medium
 source: conversation 2026-08-10/11 — user asked for a thorough search of greenplum-db org history
 description: Fully catalog Shine Zhang's Greenplum-era contributions across greenplum-db repos for project/cloudberry/self-assessment.md
-claimed_by:
 scheduled: 2026-08-10
 ---
 
@@ -60,11 +59,22 @@ and `author-name:"Shine Zhang"` org-wide. All returned 0.
 
 ## Relationship to the `apache/cloudberry` 27-commit figure
 
-**Resolved by direct SHA comparison**: all 27 commits found earlier under
-`repo:apache/cloudberry author:xinzweb` are an **exact subset** of the 34
-unique `xinzweb`-authored commits above (27/27 SHAs match, 0 unique to
-`apache/cloudberry` only) — expected, since Cloudberry's donated history
-traces back to `gpdb-archive`. **Not additive** — don't add 27 to 238.
+**Resolved by direct SHA comparison**, not just plausible reasoning:
+
+```bash
+gh api search/commits -f q='repo:apache/cloudberry author:xinzweb' \
+  --jq '.items[].sha' | sort > cloudberry_shas.txt
+gh api search/commits -f q='org:greenplum-db author:xinzweb' \
+  --jq '.items[].sha' | sort -u > greenplumdb_xinzweb_shas.txt
+comm -23 cloudberry_shas.txt greenplumdb_xinzweb_shas.txt   # SHAs unique to cloudberry — empty
+comm -12 cloudberry_shas.txt greenplumdb_xinzweb_shas.txt   # SHAs in both — all 27
+```
+
+All 27 commits found earlier under `repo:apache/cloudberry author:xinzweb`
+are an **exact subset** of the 34 unique `xinzweb`-authored commits above
+(27/27 SHAs match, `comm -23` returns empty) — expected, since
+Cloudberry's donated history traces back to `gpdb-archive`. **Not
+additive** — don't add 27 to 238.
 
 ## Work log
 

@@ -73,7 +73,8 @@ author:xinzweb'`), 2016-01 through 2017-11.
 
 A 2026-08-10/11 search across the whole `greenplum-db` GitHub org (`gh
 api search/commits`, full methodology and raw numbers in
-`dev/TODO/T20260810-367141`) found a much larger body of work under
+`dev/JOURNAL/2026-08-11-T20260810-367141-catalog-greenplum-legacy-contributions.md`)
+found a much larger body of work under
 **three confirmed identities**, all the same person (user-confirmed).
 Numbers below are **deduplicated by SHA** — the same commit can appear
 under more than one repo because several `greenplum-db` repos share
@@ -93,10 +94,15 @@ double-counts:
   a materially different kind of work than the 2016-era ORCA/gpdb code
   fixes.
 
-**Resolved by direct SHA comparison**: the 27 `apache/cloudberry`
-commits above are an **exact subset** of the 34 `xinzweb` commits here
-(27/27 match) — not an additional, separate count. Don't add the two
-numbers together.
+**Resolved by direct SHA comparison** (not just plausible reasoning):
+diffing the sorted SHA lists from
+`gh api search/commits -f q='repo:apache/cloudberry author:xinzweb'`
+against
+`gh api search/commits -f q='org:greenplum-db author:xinzweb'` via
+`comm -23`/`comm -12` shows all 27 `apache/cloudberry` SHAs land inside
+the 34 `xinzweb` commits here (27/27 match, 0 unique to
+`apache/cloudberry` only) — not an additional, separate count. Don't add
+the two numbers together.
 
 The `greenplum-db`-org totals (deduplicated):
 
