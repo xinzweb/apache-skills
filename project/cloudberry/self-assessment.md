@@ -65,12 +65,15 @@ and cross-checked against `gh` — not guessed:
 ## Legacy contribution (Greenplum era, 2016-2023)
 
 Apache Cloudberry's codebase is derived from open-source Greenplum
-Database, and the donation carried Greenplum's git history along with it —
-so the smaller slice of this (27 commits) predates the ASF project
-entirely but is literally still in `apache/cloudberry`'s `git log` today.
-The full picture is much bigger than that slice: a 2026-08-10/11 search
-across the whole `greenplum-db` GitHub org (`gh api search/commits`,
-full detail and remaining work in `dev/TODO/T20260810-367141`) found
+Database, and the donation carried Greenplum's git history along with
+it — so 27 commits under `author:xinzweb` predate the ASF project
+entirely but are literally still in `apache/cloudberry`'s `git log`
+today (`gh api search/commits -f q='repo:apache/cloudberry
+author:xinzweb'`), 2016-01 through 2017-11.
+
+Separately, a 2026-08-10/11 search across the whole `greenplum-db`
+GitHub org (`gh api search/commits`, full detail and remaining work in
+`dev/TODO/T20260810-367141`) found a much larger body of work under
 **three confirmed identities**, all the same person (user-confirmed):
 
 - GitHub `xinzweb` — direct author on 48 commits
@@ -84,19 +87,31 @@ full detail and remaining work in `dev/TODO/T20260810-367141`) found
   Concourse CI release engineering — a materially different kind of work
   than the 2016-era ORCA/gpdb code fixes.
 
-Combined: **253 direct-author commits**, plus 45 `Co-authored-by` and 4
-`Reviewed-by` credits, spanning **2016 through November 2023** — seven-plus
-years, not two — across `gpdb-archive`, `gporca-archive`, `gp-xerces-archive`
-(not previously known to the user — surfaced by this search), and
-`greenplum-database-release-archive`. Notably: a `Reviewed-by: Xin Zhang
-<zhxin@vmware.com>` credit on a November 2023 `gpdb-archive` commit is the
-most recent confirmed activity found anywhere in this legacy search — barely
-a year before the Cloudberry ICLA. **`pxf-archive`, which the user
-specifically expected to have contributions in, came back with zero hits**
-across every identity checked — flagged rather than assumed away; either a
-4th identity exists that hasn't been found yet, or the expectation doesn't
-hold. Highlights from the smaller, already-detailed `apache/cloudberry`
-slice (2016-01 through 2017-11):
+**Note:** `apache/cloudberry` lives in the `apache` GitHub org, not
+`greenplum-db`, so this org-wide search did not cover it — whether the
+27-commit figure above is a subset of the 253 below (plausible, since
+both trace the same donated history) or a separate count is **not yet
+verified by SHA** (tracked in `dev/TODO/T20260810-367141`). Treat the two
+numbers as two separate findings, not one combined total, until that's
+checked.
+
+The `greenplum-db`-org totals:
+
+- **253 direct-author commits**, plus 45 `Co-authored-by` and 4
+  `Reviewed-by` credits
+- Spanning **2016 through November 2023** — seven-plus years
+- Across `gpdb-archive`, `gporca-archive`, `gp-xerces-archive` (not
+  previously known to the user — surfaced by this search), and
+  `greenplum-database-release-archive`
+- Most recent confirmed activity: a `Reviewed-by: Xin Zhang
+  <zhxin@vmware.com>` credit on a November 2023 `gpdb-archive` commit —
+  about 11 months before the Cloudberry ICLA (2024-10-19)
+- **`pxf-archive`, which the user specifically expected to have
+  contributions in, came back with zero hits** across every identity
+  checked — flagged rather than assumed away; either a 4th identity
+  exists that hasn't been found yet, or the expectation doesn't hold
+
+Highlights from the `apache/cloudberry` slice (2016-01 through 2017-11):
 
 - `Fix implied predicates under limit subquery [#129871531] (#125)` —
   2016-11-28, a query-planner correctness fix
@@ -136,9 +151,9 @@ specifically about **recency**, not competence:
   Findings above).
 
 **So the honest read**: this isn't "prove you can do the work" — 2016-2023
-already proved that, decisively, and repeatedly. It's "the current project
-doesn't see you
-very often." Those call for different fixes. Proving competence again
+already proved that, decisively, and repeatedly. It's "the current
+project doesn't see you very often." Those call for different fixes.
+Proving competence again
 would be redundant; the quest log below is deliberately about *presence* —
 small, visible, recent actions — not about re-establishing technical
 credibility that was never in question.

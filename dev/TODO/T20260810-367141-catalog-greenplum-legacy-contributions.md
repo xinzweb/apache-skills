@@ -59,11 +59,15 @@ task is the full catalog + write-up, not the discovery.
       0 in the initial scoping pass, worth one more pass by email domain
       alone (`*@pivotal.io`, `*@vmware.com`) filtered to first-name "Xin"
       in case of a name variant not yet tried
-- [ ] Rewrite `project/cloudberry/self-assessment.md`'s "Legacy
-      contribution" section with the full, accurate picture (currently
-      only reflects the 27 commits found in `apache/cloudberry`'s
-      inherited history, which undersells the real scope by an order of
-      magnitude)
+- [x] Rewrite `project/cloudberry/self-assessment.md`'s "Legacy
+      contribution" section with the headline numbers from the scoping
+      search — done in this same PR
+- [ ] Verify whether the 27 `apache/cloudberry`-only commits are actually
+      a subset of the 253 `org:greenplum-db` figure, or a separate count —
+      `apache/cloudberry` lives in the `apache` GitHub org, not
+      `greenplum-db`, so the org-wide search never covered it. Don't
+      assume containment just because the donation carried Greenplum's
+      git history; verify by SHA before stating it either way.
 - [ ] Decide presentation: a full commit-by-commit list would be far too
       long for that file — summarize by repo/era/kind of work, link out to
       the actual `gh api search/commits` queries (reproducible) rather
