@@ -22,8 +22,8 @@ replace the community that decides on it.
 | **Class** | PPMC Member, Apache Cloudberry (Incubating) |
 | **Title Level** | 4 — PPMC Member *(real, doesn't decay; founding-member grant, see Legacy Contribution)* |
 | **Legacy Bonus** | 238 distinct commits (209 direct-author + 25 co-author-only + 4 reviewer-only, deduplicated by SHA), 2016-2023 (Greenplum era, 3 confirmed identities — see below) |
-| **Activity Streak** | 0 weeks *(starts today — see Findings)* |
-| **XP** | 0 *(tracking starts 2026-08-10 — past contributions aren't back-filled)* |
+| **Activity Streak** | 1 week *(2026-08-21 — Quest 0 + Quest 2 done)* |
+| **XP** | 25 *(Quest 0: +5, Quest 2: +20 — see Level-up log)* |
 | **Next Title Level** | N/A upward from PPMC without a project-wide event (graduation) — see `career-path.md`'s foundation-wide track (ASF Member) for the next *personal* tier instead |
 
 ---
@@ -181,13 +181,20 @@ Check items off as you complete them; log the date and XP earned.
 
 ### 🔴 Quest 0 — Where Did Everyone Go? *(do this first)*
 
-- [ ] Confirm `dev-subscribe@cloudberry.apache.org`,
+- [x] Confirm `dev-subscribe@cloudberry.apache.org`,
       `private@cloudberry.apache.org`, and `commits@cloudberry.apache.org`
       subscriptions are actually active on the address you check — the
       4-6 month inbox silence above is either a real project slowdown or a
       broken subscription, and you want to know which before drawing any
       other conclusion from this file.
-- **Reward**: +5 XP. **Why it's first**: every other quest below assumes
+- **Done 2026-08-21, +5 XP.** Confirmed broken, not a slowdown: `dev@`
+  last delivered 2026-04-14, `private@` 2026-02-05, `commits@` 2026-02-23,
+  nothing since on any of them, while `general@incubator.apache.org` kept
+  delivering (last seen 2026-08-05) and `apache/cloudberry` had commits as
+  recent as 2026-08-19. Resubscribed to all three and completed the ezmlm
+  double opt-in. `private@` is moderated (pending approval); `dev@`/
+  `commits@` confirmations sent, welcome mail not yet observed — recheck
+  next session. **Why it's first**: every other quest below assumes
   you're actually seeing list traffic; if you're not, re-engagement starts
   with fixing that, not with picking up a bug.
 
@@ -205,12 +212,19 @@ Check items off as you complete them; log the date and XP earned.
 
 ### 🟡 Quest 2 — Second Pair of Eyes
 
-- [ ] PR [#1826](https://github.com/apache/cloudberry/pull/1826) fixes
+- [x] PR [#1826](https://github.com/apache/cloudberry/pull/1826) fixes
       issue #1825 (`gpexpand` first-stage crash — `'SyncPackages' object
       has no attribute 'ret'`), open since 2026-06-18, **zero reviews**.
       A real review here both unblocks a contributor and closes a real
       regression.
-- **Reward**: +20 XP for a substantive review (not a rubber-stamp +1).
+- **Done 2026-08-21, +20 XP.** Left an Approve review after independently
+  re-deriving the bug from current `main` (not trusting the PR
+  description): confirmed the `WorkerPool`/`OperationWorkerPool` signature
+  mismatch by reading `base.py` directly, and confirmed the "fixed once,
+  silently reverted by a merge" claim by checking both commit SHAs
+  (`cd3c88f6e1e` the original fix, `0f4cf8d5068` the reverting merge) and
+  their dates. CI was fully green. Flagged a non-blocking test-coverage
+  gap. See T20260810-723411 for full detail.
 
 ### 🟡 Quest 3 — Dust Off the Old Ones
 
@@ -254,4 +268,8 @@ purely additive, don't edit past entries.
 
 ```
 2026-08-10  0 XP   File created. Activity Streak reset to 0. Quest 0 opened.
+2026-08-21  25 XP  Quest 0 done (+5): dev@/private@/commits@ subscriptions
+                    confirmed lapsed and resubscribed. Quest 2 done (+20):
+                    substantive Approve review left on PR #1826. Activity
+                    Streak -> 1 week. See T20260810-723411.
 ```
