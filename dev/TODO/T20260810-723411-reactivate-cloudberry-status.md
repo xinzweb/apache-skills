@@ -1,10 +1,12 @@
 ---
-status: Open
+status: Coding
 estimation: 2w
 priority: High
 source: conversation 2026-08-10 — user's 3-phase re-engagement plan, phase 1
 description: Pick up real Cloudberry work and dogfood the apache-skills built for it
 blocks: T20260810-177613
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
+scheduled: 2026-08-17
 ---
 
 # T20260810-723411: Reactivate Cloudberry contributor status
