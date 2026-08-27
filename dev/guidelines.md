@@ -16,6 +16,10 @@ These guidelines apply to all work in the apache-skills project.
 - `project/<name>/` — human-facing material for a specific Apache project
   this repo covers (career plans, self-assessments, issue-triage notes).
   One folder per project (e.g. `project/cloudberry/`).
+- `mcp-servers/<name>/` — runnable code: standalone MCP servers this repo
+  ships (e.g. `mcp-servers/cloudberry-segment-adapter/`), each its own
+  installable package with its own tests. Added T20260827-107079 — the
+  first runnable code in a repo that was previously skills-and-docs only.
 - `dev/` — this repo's own TODO lifecycle (not project-specific).
 
 ## Content & Privacy Guidelines
