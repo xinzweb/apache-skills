@@ -7,3 +7,4 @@ front). It's a plain list — hand-editing the order is a fully valid way to
 reprioritize.
 
 - [T20260810-723411](T20260810-723411-reactivate-cloudberry-status.md): Reactivate Cloudberry contributor status
+- [T20260827-203753](T20260827-203753-mcp-server-survey.md): Survey MCP server options for Apache Cloudberry SQL/DB access
