@@ -1,7 +1,9 @@
 ---
-status: Open
+status: Design
 estimation: 1d
 source: this conversation, 2026-08-27
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
+scheduled: 2026-08-24
 ---
 
 # T20260827-203753: Survey MCP server options for Apache Cloudberry SQL/DB access
