@@ -49,7 +49,7 @@ researched, still open as of 2026-08-10):
       (`cd3c88f6e1e`, `0f4cf8d5068`) and their dates/parents. CI was fully
       green (~40 checks incl. `rat-check`). Flagged a non-blocking gap
       (no unit test covers `OperationWorkerPool`) without blocking the fix.
-      Review: https://github.com/apache/cloudberry/pull/1826#pullrequestreview-4996955319
+      Review: <https://github.com/apache/cloudberry/pull/1826#pullrequestreview-4996955319>
 - [ ] Issue [#726](https://github.com/apache/cloudberry/issues/726) —
       small, catalog-adjacent `mvname` schema-qualification fix, maintainer
       already sketched the approach. **Not attempted this session** — real
