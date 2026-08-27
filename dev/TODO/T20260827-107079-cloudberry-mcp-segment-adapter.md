@@ -1,10 +1,11 @@
 ---
-status: Open
-scheduled: 2026-09-07
+status: Design
+scheduled: 2026-08-24
 estimation: 4h
 source: T20260827-203753 (MCP server survey) — follow-up feature seeded by its recommendation
 related: T20260827-203753
 description: Thin Cloudberry-aware MCP adapter for segment health, distribution keys, and skew
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ---
 
 # T20260827-107079: Build a thin Cloudberry-aware MCP adapter for segment/distribution visibility
