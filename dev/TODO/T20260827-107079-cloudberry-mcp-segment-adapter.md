@@ -4,11 +4,28 @@ scheduled: 2026-08-24
 estimation: 4h
 source: T20260827-203753 (MCP server survey) — follow-up feature seeded by its recommendation
 related: T20260827-203753
+priority: Medium — routine backlog feature, no deadline pressure
 description: Thin Cloudberry-aware MCP adapter for segment health, distribution keys, and skew
 claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ---
 
 # T20260827-107079: Build a thin Cloudberry-aware MCP adapter for segment/distribution visibility
+
+## TLDR
+
+- **Type**: feature
+- **Problem**: no MCP server (generic or specialized) exposes Cloudberry's
+  MPP-specific operational surface — segment health, distribution-key
+  correctness, skew-aware plan interpretation.
+- **Solution**: a small standalone Python MCP server, 4 tools, thin SQL
+  wrappers around `gp_segment_configuration`/`gp_distribution_policy` and a
+  `Motion`-line filter over `EXPLAIN` output — no live Cloudberry cluster
+  available here, so verified by unit tests against a mocked DB cursor;
+  live-cluster verification is an explicit unverified Done-criteria item.
+- **Location decision** (maintainer, 2026-08-27): new directory in this
+  repo, `mcp-servers/cloudberry-segment-adapter/` — `apache-skills` had no
+  prior precedent for shipping runnable code (see `CLAUDE.md`'s Repo
+  Layout), so this is a structural addition, not an implementation detail.
 
 ## Problem
 
@@ -34,3 +51,144 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 - Pair with a generic wire-protocol MCP server (e.g. `mcp-alchemy`) for
   baseline schema/SQL access — this adapter only needs to cover the
   Cloudberry-specific gap, not duplicate baseline functionality.
+- **Catalog columns** (verified against Cloudberry's own docs, 2026-08-27):
+  - [`gp_segment_configuration`](https://cloudberry.apache.org/docs/sys-catalogs/sys-tables/gp-segment-configuration/):
+    `dbid`, `content`, `role` (`p`/`m`), `preferred_role`, `mode`
+    (`s`=synchronized, `n`=not-in-sync), `status` (`u`=up, `d`=down),
+    `hostname`, `address`, `port`.
+  - [`gp_distribution_policy`](https://cloudberry.apache.org/docs/sys-catalogs/sys-tables/gp-distribution-policy/):
+    `localoid` (→ `pg_class.oid`), `policytype` (`p`=partitioned,
+    `r`=replicated), `numsegments`, `distkey` (int2vector of
+    `pg_attribute.attnum`), `distclass`. A `policytype='p'` row with an
+    **empty** `distkey` is Cloudberry's `DISTRIBUTED RANDOMLY` — the docs
+    don't spell this out explicitly; it follows from `distkey` having
+    nothing to name.
+  - `EXPLAIN` on Cloudberry/Greenplum-family databases includes plan node
+    types not in vanilla Postgres — `Gather Motion`, `Redistribute Motion`,
+    `Broadcast Motion` — the redistribution-cost signal a generic EXPLAIN
+    tool would print but not call out.
+- **MCP Python SDK** (verified via the SDK's own README, 2026-08-27):
+  install `mcp[cli]`; server construction and tool registration is
+  `from mcp.server import MCPServer` → `mcp = MCPServer("name")` →
+  `@mcp.tool()` on a type-hinted function, docstring becomes the tool
+  description. **Re-confirm this import path against the actually-installed
+  package at implementation time** (`python -c "import mcp.server; print(mcp.server.__file__)"`)
+  before writing `server.py` — SDK reference docs can drift from a pinned
+  version faster than this design doc will.
+
+## Solution (architecture)
+
+- **Package**: `mcp-servers/cloudberry-segment-adapter/` (new top-level dir):
+
+  ```text
+  mcp-servers/cloudberry-segment-adapter/
+    README.md
+    pyproject.toml                              # deps: mcp[cli], psycopg2-binary
+    src/cloudberry_segment_adapter/
+      __init__.py
+      db.py                                      # connection factory, reads DATABASE_URL
+      queries.py                                 # SQL + row-shaping, takes a cursor — no MCP/network code
+      server.py                                  # MCPServer instance, 4 @mcp.tool() wrappers over queries.py
+    tests/
+      test_queries.py                            # unit tests, mocked cursor — no live DB
+  ```
+
+  Splitting `queries.py` (pure SQL + parsing logic) from `server.py` (MCP
+  wiring) is what makes the mocked-cursor unit-test strategy possible
+  without a live cluster or an MCP client harness.
+- **Connection**: `psycopg2` via a `DATABASE_URL` env var — the same
+  convention `T20260827-203753`'s survey confirmed for `mcp-alchemy` /
+  `sql-alchemy-mcp` / `helloscoopa/mcp-postgres`, so a user already running
+  one of those alongside this adapter reuses the same connection string.
+- **Tools** (SQL sketched from the verified catalog columns above; exact
+  text finalized during implementation, not fixed by this design):
+  - `list_segments()` — `SELECT dbid, content, role, preferred_role, mode,
+    status, hostname, address, port FROM gp_segment_configuration ORDER BY
+    content, role;` — flags `status='d'` (down) and `mode='n'` (not in
+    sync) rows in the returned summary.
+  - `get_distribution_policy(table_name)` — joins `gp_distribution_policy`
+    → `pg_class` → `pg_attribute` to resolve `distkey` attnums to column
+    names; labels the result `REPLICATED` (`policytype='r'`), `RANDOM`
+    (`policytype='p'`, empty `distkey`), or `HASH(col1, col2, ...)`.
+  - `check_data_skew(table_name)` — `SELECT gp_segment_id, count(*) FROM
+    <table_name> GROUP BY gp_segment_id ORDER BY gp_segment_id;` — flags
+    skew when a segment's row count deviates from the mean by more than a
+    threshold (start at 10%, a tool-chosen heuristic, not an official
+    Cloudberry number — call this out in the tool's own docstring).
+  - `explain_segment_aware(query)` — runs `EXPLAIN <query>`, returns the
+    full plan text plus a separate summary list of every line containing
+    `Motion` (the redistribution-cost signal generic EXPLAIN tools print
+    but don't surface).
+- **Alternative rejected — fork `postgres-mcp` or `mcp-alchemy`**: both are
+  general-purpose servers with their own release cadence and unrelated
+  tool surface; forking either means carrying their upstream code just to
+  bolt on 4 unrelated tools. A small standalone server with its own 4-tool
+  surface is easier to reason about and doesn't couple this repo to
+  another project's upstream changes. (Same rejected-alternative pattern as
+  `T20260827-203753`'s own build-from-scratch-vs-reuse call, applied the
+  other direction: reuse for baseline access, build fresh for the gap.)
+- **Alternative rejected — expand scope to cover query execution timing /
+  historical stats (a `pg_stat_statements`-style feature)**: out of scope —
+  the survey's `## Findings` already identified that gap as belonging to
+  `postgres-mcp`, and duplicating coordinator-only stats gives the same
+  misleading picture the survey flagged as a reason to avoid that tool on
+  Cloudberry. This adapter stays scoped to catalog/plan-shape visibility.
+
+## Test plan
+
+- [ ] `tests/test_queries.py::test_list_segments_flags_down_and_unsynced` —
+      mocked cursor returns rows with `status='d'`/`mode='n'`; assert the
+      parsed result flags them
+- [ ] `tests/test_queries.py::test_distribution_policy_labels_replicated_random_hash` —
+      3 mocked-row cases (`policytype='r'`; `policytype='p'`+empty
+      `distkey`; `policytype='p'`+non-empty `distkey`); assert each label
+- [ ] `tests/test_queries.py::test_data_skew_flags_deviation` — mocked
+      per-segment counts with one segment >10% off the mean; assert flagged
+- [ ] `tests/test_queries.py::test_explain_segment_aware_extracts_motion_lines` —
+      a multi-line `EXPLAIN` text fixture containing `Gather Motion` /
+      `Redistribute Motion` lines; assert they're extracted into the
+      summary
+- [ ] `tests/test_queries.py::test_sql_text_for_each_tool` — assert the
+      exact SQL string issued per tool matches this design's sketch (catches
+      drift between design and implementation)
+- [ ] **Post-merge, external, unverified here**: running against a live
+      Cloudberry cluster — no cluster is reachable from this environment;
+      note this explicitly rather than claiming a false pass
+
+## Done criteria
+
+- [ ] `src/cloudberry_segment_adapter/queries.py` implements all 4 tool
+      functions — mapped to `tests/test_queries.py` (all 5 tests above)
+- [ ] `src/cloudberry_segment_adapter/server.py` registers all 4 as
+      `@mcp.tool()` — mapped to `tests/test_queries.py::test_sql_text_for_each_tool`
+      exercising them through the same code path the server calls
+- [ ] `pytest tests/` passes locally (test plan items above)
+- [ ] `README.md` documents `DATABASE_URL` setup and the pairing note
+      (use alongside a generic MCP server for baseline access)
+- [ ] `CLAUDE.md`'s Repo Layout gains a one-line `mcp-servers/` entry — in a
+      separate small PR after this one merges, per `dev/guidelines.md`'s
+      "don't update CLAUDE.md on feature branches" note
+
+## Root cause
+
+- N/A — this is a greenfield feature (`## TLDR` Type: feature) tracked in
+  `dev/TODO/T20260827-107079-cloudberry-mcp-segment-adapter.md`, not a bug
+  fix; there is no prior broken behavior to trace. The "why build vs. reuse"
+  reasoning that a Root-cause section would normally carry is in
+  `## Solution`'s rejected-alternatives bullets instead.
+
+## Repo file references
+
+| File | Lines | Purpose |
+| --- | --- | --- |
+| `mcp-servers/cloudberry-segment-adapter/pyproject.toml` | new | package metadata + deps (`mcp[cli]`, `psycopg2-binary`) |
+| `mcp-servers/cloudberry-segment-adapter/src/cloudberry_segment_adapter/db.py` | new | `DATABASE_URL` → `psycopg2` connection factory |
+| `mcp-servers/cloudberry-segment-adapter/src/cloudberry_segment_adapter/queries.py` | new | SQL + row-shaping for all 4 tools; cursor-only, no MCP/network code |
+| `mcp-servers/cloudberry-segment-adapter/src/cloudberry_segment_adapter/server.py` | new | `MCPServer` instance + 4 `@mcp.tool()` wrappers |
+| `mcp-servers/cloudberry-segment-adapter/tests/test_queries.py` | new | unit tests against a mocked cursor (5 cases, see `## Test plan`) |
+| `mcp-servers/cloudberry-segment-adapter/README.md` | new | setup + pairing-with-a-generic-server note |
+| `CLAUDE.md` | Repo Layout section | +1 line for `mcp-servers/` — separate follow-up PR, see `## Done criteria` |
+
+## Closed
+
+## Skills invoked
