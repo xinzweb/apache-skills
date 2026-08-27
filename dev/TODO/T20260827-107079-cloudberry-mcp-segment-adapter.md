@@ -24,8 +24,9 @@ claimed_by:
   live-cluster verification is an explicit unverified Done-criteria item.
 - **Location decision** (maintainer, 2026-08-27): new directory in this
   repo, `mcp-servers/cloudberry-segment-adapter/` — `apache-skills` had no
-  prior precedent for shipping runnable code (see `CLAUDE.md`'s Repo
-  Layout), so this is a structural addition, not an implementation detail.
+  prior precedent for shipping runnable code (see `dev/guidelines.md`'s
+  Repo Layout), so this is a structural addition, not an implementation
+  detail.
 
 ## Problem
 
@@ -196,9 +197,12 @@ claimed_by:
 - [x] `pytest tests/` passes locally — 8 passed, 0 failed
 - [x] `README.md` documents `DATABASE_URL` setup and the pairing note
       (use alongside a generic MCP server for baseline access)
-- [ ] `CLAUDE.md`'s Repo Layout gains a one-line `mcp-servers/` entry — in a
-      separate small PR after this one merges, per `dev/guidelines.md`'s
-      "don't update CLAUDE.md on feature branches" note
+- [x] `dev/guidelines.md`'s Repo Layout gains a one-line `mcp-servers/`
+      entry — landed in a separate small PR after this one merged, in the
+      spirit of the "don't update CLAUDE.md on feature branches" note
+      (correcting this item's own earlier mis-citation: the actual Repo
+      Layout list lives in `dev/guidelines.md`, not `CLAUDE.md`, which has
+      no such section)
 
 ## Root cause
 
@@ -218,7 +222,7 @@ claimed_by:
 | `mcp-servers/cloudberry-segment-adapter/src/cloudberry_segment_adapter/server.py` | new | `MCPServer` instance + 4 `@mcp.tool()` wrappers |
 | `mcp-servers/cloudberry-segment-adapter/tests/test_queries.py` | new | unit tests against a mocked cursor (5 cases, see `## Test plan`) |
 | `mcp-servers/cloudberry-segment-adapter/README.md` | new | setup + pairing-with-a-generic-server note |
-| `CLAUDE.md` | Repo Layout section | +1 line for `mcp-servers/` — separate follow-up PR, see `## Done criteria` |
+| `dev/guidelines.md` | Repo Layout section | +1 line for `mcp-servers/` — separate follow-up PR, see `## Done criteria` |
 
 ## Closed (2026-08-27)
 
@@ -226,9 +230,8 @@ claimed_by:
   (`mcp-servers/cloudberry-segment-adapter/`, 8 passing unit tests).
 - All Done criteria met except one, left honestly unchecked: live-cluster
   verification — no Apache Cloudberry cluster was reachable from this
-  environment, so only the mocked-cursor unit tests ran. The `CLAUDE.md`
-  Repo Layout update is deferred to a separate follow-up PR per
-  `dev/guidelines.md`.
+  environment, so only the mocked-cursor unit tests ran. The
+  `dev/guidelines.md` Repo Layout update landed separately, see below.
 - The MCP Python SDK API sketched in the design (`from mcp.server import
   MCPServer`, `@mcp.tool()`) was independently confirmed correct by
   installing `mcp==2.1.1` and inspecting it directly — not just trusting
