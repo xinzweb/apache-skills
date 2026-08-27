@@ -239,6 +239,15 @@ claimed_by:
   `## Solution`'s implementation note.
 - No follow-up task filed — this closes the loop `T20260827-203753`
   opened; nothing further identified as in-scope.
+- `doc-impact.sh` flagged 9 `.claude/skills/cloudberry-*/SKILL.md` files +
+  `dev/guidelines.md` as referencing "README.md" — reviewed: false
+  positive, a generic-filename substring match against unrelated Apache
+  Cloudberry contribution-process docs, none of which reference this
+  package's `README.md`. No change needed.
+- Quality probe: 9 files touched, design score 94/100 carried through;
+  static scanners (shellcheck/jscpd/gitleaks/kcov) unavailable in this
+  environment, recorded `null` rather than skipped silently — see
+  `dev/quality/metrics.jsonl`.
 
 ## Skills invoked
 
