@@ -11,3 +11,4 @@ reprioritize.
 - [T20260827-107079](T20260827-107079-cloudberry-mcp-segment-adapter.md): Build a thin Cloudberry-aware MCP adapter for segment/distribution visibility
 - [T20260827-397440](T20260827-397440-cloudberry-drive-skill.md): Fold the ccxp/drive skillset into cloudberry-driven upstream work
 - [T20260828-134911](T20260828-134911-cloudberry-issue-726-mvname-fix.md): Fix apache/cloudberry#726 — gp_matview_aux.mvname schema confusion
+- [T20260829-423782](T20260829-423782-cloudberry-daily-activity-digest.md): Daily Gmail digest of apache/cloudberry activity mentioning me
