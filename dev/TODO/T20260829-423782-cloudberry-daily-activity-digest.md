@@ -1,9 +1,11 @@
 ---
-status: Open
+status: Design
 estimation: 4h
 source: this conversation, 2026-08-29
 related: T20260828-134911, T20260827-397440
 description: Daily Gmail digest of apache/cloudberry activity mentioning the user
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
+scheduled: 2026-08-31
 ---
 
 # T20260829-423782: Daily Gmail digest of apache/cloudberry activity mentioning me
