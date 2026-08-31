@@ -1,10 +1,10 @@
 ---
-status: Design
+status: Done
 estimation: 4h
 source: this conversation, 2026-08-29
 related: T20260828-134911, T20260827-397440
 description: Daily Gmail digest of apache/cloudberry activity mentioning the user
-claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
+claimed_by:
 scheduled: 2026-08-31
 ---
 
@@ -126,28 +126,81 @@ scheduled: 2026-08-31
 
 ## Test plan
 
-- [ ] Manually run the notifications query
+- [x] Manually run the notifications query
       (`gh api "notifications?all=true&since=<24h-ago>"` filtered to
       apache/cloudberry) and spot-check the `reason` bucketing against a
       couple of known threads.
-- [ ] Manually invoke the `cloudberry-activity-digest` skill end-to-end
+- [x] Manually invoke the `cloudberry-activity-digest` skill end-to-end
       once and confirm it sends via `mcp__claude_ai_Gmail__send_message`
       with the correct subject prefix and a readable body.
-- [ ] Confirm the email actually lands in `75033us@gmail.com`.
-- [ ] (stretch, not blocking) Attempt to wire a daily `/schedule` cloud
+- [x] Confirm the email actually lands in `75033us@gmail.com`.
+- [x] (stretch, not blocking) Attempt to wire a daily `/schedule` cloud
       routine invoking the skill; note explicitly if the Gmail MCP
       connection's availability in that execution context can't be
       verified from this session.
 
 ## Done criteria
 
-- [ ] Query logic proven live against apache/cloudberry, correctly
+- [x] Query logic proven live against apache/cloudberry, correctly
       bucketed by `reason` — evidence captured in this task file's
       `## Closed` section.
-- [ ] One real digest email sent via `mcp__claude_ai_Gmail__send_message`
+- [x] One real digest email sent via `mcp__claude_ai_Gmail__send_message`
       with subject `[CC: Shine @Apache] ...`, confirmed received.
-- [ ] `.claude/skills/cloudberry-activity-digest/SKILL.md` exists,
+- [x] `.claude/skills/cloudberry-activity-digest/SKILL.md` exists,
       documents the full query → compose → send procedure, and is
       runnable standalone (not only from a scheduler).
-- [ ] Scheduling-mechanism decision recorded (`/schedule` daily cloud
-      routine, above); actual wiring is a stretch goal, not blocking.
+- [x] Scheduling-mechanism decision recorded (`/schedule` daily cloud
+      routine, above); actual wiring is a stretch goal, not blocking —
+      wired anyway, see `## Closed` below.
+
+## Closed (2026-08-31)
+
+- Shipped in this PR (see commit `docs(tasks): design ...` for the
+  merged design, and this PR for the skill + close).
+- **Query logic** — proven live against `apache/cloudberry`:
+  `gh api "notifications?all=true&since=<24h>"` returned `[]` for this
+  account (a genuinely quiet 24h window — confirmed independently via
+  the supplementary `involves:xinzweb+updated:>=<24h>` search, also
+  `[]`). To prove the non-empty-result bucketing/formatting path (not
+  exercisable against a quiet live window), the same pipeline was run
+  against this account's all-time `involves:xinzweb` data (3 PRs:
+  #1826 open, #929/#731 closed+review-requested) and included in the
+  proof email as a clearly-labeled "pipeline validation" section.
+- **Gmail send** — one real email sent via
+  `mcp__claude_ai_Gmail__send_message`
+  (message id `1a058179226ebd59`), subject
+  `[CC: Shine @Apache] apache/cloudberry activity — 2026-08-31`,
+  confirmed received via `get_message` (`labelIds` include `INBOX`,
+  correct `sender`/`toRecipients` = `75033us@gmail.com`).
+- **Skill** — `.claude/skills/cloudberry-activity-digest/SKILL.md`,
+  prose-instructional per the `cloudberry-*` convention.
+- **Scheduling** — attempted as a stretch goal and it worked: created
+  cloud routine `trig_01Xqa2sqpNaAKQ7MuFj46FNj`
+  ("cloudberry-activity-digest-daily", daily `0 13 * * *` UTC = 8am
+  America/Chicago, Gmail MCP connector attached), confirmed with the
+  user first (time-of-day is a real preference, not a call to make
+  alone). A pre-merge test-fire (`run` action) correctly no-op'd —
+  it cloned `main`, which didn't have the skill yet (still only local
+  in this PR), and sent a push notification instead of hallucinating
+  success. That's the right failure mode, but it means the cloud
+  environment's `gh` CLI auth for the notifications/search calls is
+  **not yet verified against a real fire** — first genuine production
+  fire is 2026-09-01 ~13:03 UTC; if it fails, `list_runs`/`get_run_log`
+  on that trigger will show why.
+- **Follow-up**: none filed — the one open unknown (cloud-env `gh`
+  auth) will self-resolve or self-report via the routine's own
+  push-notification-on-failure behavior observed in the test fire.
+
+## Skills invoked
+
+- TDD (`superpowers:test-driven-development`): no — docs-class change
+  (a prose `SKILL.md`, no bundled script/code).
+- Verification (`superpowers:verification-before-completion`): yes —
+  the query/send pipeline was proven live (email sent + confirmed
+  received) rather than assumed from reading the design.
+- Systematic debugging (`superpowers:systematic-debugging`): no —
+  didn't get stuck; the `mentions:`-under-counts finding came from
+  direct live probing during design, not from debugging a failure.
+- Receiving code review (`superpowers:receiving-code-review`): no —
+  solo repo, no CI/reviewer configured; self-reviewed via the
+  design-score gate (72/100) and `lint-docs.sh` instead.
