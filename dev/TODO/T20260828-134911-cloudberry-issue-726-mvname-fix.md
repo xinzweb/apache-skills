@@ -6,6 +6,7 @@ source: T20260810-723411's "Pick at least one real item" list (issue #726 flagge
 related: T20260810-723411
 target-repo: apache/cloudberry
 description: Fix apache/cloudberry#726 (gp_matview_aux.mvname schema confusion) — design, patch, and live validation done; not yet pushed/opened as a PR
+claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ---
 
 # T20260828-134911: Fix apache/cloudberry#726 — gp_matview_aux.mvname schema confusion
