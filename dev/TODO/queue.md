@@ -11,3 +11,4 @@ reprioritize.
 - [T20260827-397440](T20260827-397440-cloudberry-drive-skill.md): Fold the ccxp/drive skillset into cloudberry-driven upstream work
 - [T20260828-134911](T20260828-134911-cloudberry-issue-726-mvname-fix.md): Fix apache/cloudberry#726 — gp_matview_aux.mvname schema confusion
 - [T20260901-230882](T20260901-230882-cloudberry-pr-review-top10.md): Review the 10 newest open PRs on apache/cloudberry
+- [T20260901-293495](T20260901-293495-cloudberry-digest-routine-repo-access.md): Fix the cloudberry-activity-digest routine's apache/cloudberry access
