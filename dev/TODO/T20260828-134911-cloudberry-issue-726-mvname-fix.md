@@ -22,11 +22,20 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
   `gp_matviews` convenience view — modeled on Postgres's own `pg_matviews`
   — that live-joins `pg_matview_aux` → `pg_class` → `pg_namespace` for a
   correctly schema-qualified name instead of a stale, denormalized copy.
-- **Status**: design, patch, and live-cluster validation are complete this
-  session (2026-08-27/28). **Not yet pushed anywhere** — the two commits
-  exist only in ephemeral local clones (see `## Repo file references` /
-  `## Where the work lives` below). Pushing to a fork + opening the PR is
-  the only remaining work.
+- **Status (updated 2026-09-02)**: the 2026-08-27/28 session's design,
+  patch, and live-cluster validation were never pushed and were lost when
+  their ephemeral `/tmp` clones' `.git` silently hollowed out across a
+  session boundary (see `## Where the work lives` — incident now tracked
+  as `synx-skills` `T20260902-167059`, filed to fix the underlying
+  ephemeral-clone gap). The design itself was fully recoverable from this
+  file's own `## Solution` (exact diffs), so the catalog fix and
+  mechanical test-file rename have been **reapplied from scratch** against
+  current `apache/cloudberry@main` (`867c6a14`, not the original
+  `eaf8e256`) and **pushed immediately** to a durable fork
+  (`xinzweb/cloudberrydb`, branch `t726-remove-mvname-column`) — before
+  starting the expensive live-cluster rebuild this time, per the lesson
+  from the incident. Live-cluster validation is **not yet redone** — that
+  and the `.out` expected-output regeneration are the remaining work.
 
 ## Problem
 
@@ -143,30 +152,30 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 
 ## Test plan
 
-- [x] Compiles clean with `-Werror` against current `main` (verified via
-      real Docker build, not just static review)
-- [x] Catalog bootstraps correctly — `gpinitsystem` confirms catversion
-      `302608271` on a live 6-segment cluster
-- [x] **The actual fix, manually proven live**: `mv0` created in two
-      different schemas now shows as two distinct rows via
-      `gp_matviews.mvschema` (`s1 | mv0 | f | u` and `s2 | mv0 | f | u`) —
-      the exact scenario issue #726 describes as broken, confirmed fixed
-- [x] `ALTER MATERIALIZED VIEW ... RENAME` verified live — `gp_matviews`
+**Re-verification needed (2026-09-02 redo — the 2026-08-27/28 session's
+live-cluster evidence below was lost with its ephemeral clone; the checks
+themselves are unchanged, only the completed/pending status resets):**
+
+- [ ] Compiles clean with `-Werror` against current `main` (867c6a14) —
+      verify via real Docker build, not just static review
+- [ ] Catalog bootstraps correctly — `gpinitsystem` confirms catversion
+      `302609021` on a live 6-segment cluster
+- [ ] **The actual fix, manually proven live**: `mv0` created in two
+      different schemas shows as two distinct rows via
+      `gp_matviews.mvschema` — the exact scenario issue #726 describes as
+      broken. (Previously confirmed 2026-08-27 as `s1 | mv0 | f | u` /
+      `s2 | mv0 | f | u`; re-confirm against the new schema-collision test
+      added directly to `matview_data.sql` this time, not just ad hoc SQL)
+- [ ] `ALTER MATERIALIZED VIEW ... RENAME` verified live — `gp_matviews`
       reflects the new name immediately with the sync code deleted
-- [x] `src/test/regress/sql/matview_data.sql` run against the live
-      cluster — caught and fixed a **real bug in my own new test** (it
-      referenced `t1`, a table already dropped earlier in the file at
-      line 947); expected output regenerated from the actual live
-      transcript, not hand-written. Remaining diff vs. the original
-      capture is limited to pre-existing 2-segment-vs-3-segment cluster
-      noise (non-deterministic row order on unordered `LIKE` queries,
-      `Gather/Redistribute/Broadcast Motion` segment-count labels in an
-      unrelated join-planning test section) — confirmed unrelated to this
-      patch, not something this task fixes
-- [x] `src/test/regress/sql/aqumv.sql`'s two `gp_matviews`-referencing
-      queries verified byte-identical to the original capture
-      (`normal_mv_t1 | e` and `datastatus = u` for `aqumv_ext_mv`)
-- [x] `misc_sanity.out` needs **zero** changes — confirmed both by static
+- [ ] `src/test/regress/sql/matview_data.sql` run against the live
+      cluster; expected output regenerated from the actual live
+      transcript, not hand-written
+- [ ] `src/test/regress/sql/aqumv.sql`'s two `gp_matviews`-referencing
+      queries captured live (previously: `normal_mv_t1 | e` and
+      `datastatus = u` for `aqumv_ext_mv` — re-confirm, don't assume
+      unchanged)
+- [ ] `misc_sanity.out` needs **zero** changes — confirm both by static
       reasoning (the removed column was fixed-length/non-toastable, and
       its index was already non-unique, so neither existing sanity check
       ever listed it) and by an actual live diff (empty)
@@ -193,18 +202,18 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
       comment that first flagged it
 - [x] Fix designed, with alternatives-rejected reasoning, per maintainer +
       user input during this session
-- [x] Patch written and compiles clean (`-Werror`)
-- [x] Fix proven correct on a live cluster (not just claimed)
-- [x] New regression test added, and — critically — actually run, catching
-      a real bug in the test itself before it could have shipped broken
-- [ ] **Push the branch to a durable location** — right now the two
-      commits (`c9149a2c`, `cfb6c9cd` on branch `t726-remove-mvname-column`,
-      based on `apache/cloudberry@eaf8e256`) exist **only** in ephemeral
-      local clones that could be cleaned between sessions:
-      `/private/tmp/claude-501/.../scratchpad/cloudberry` (canonical) and
-      `/Users/xlj/tmp-t726-build/cloudberry` (build copy, in sync). Push
-      to a fork before either gets swept, or the validated patch is lost
-      and this task's evidence trail (above) becomes the only record.
+- [x] Patch written (reapplied 2026-09-02 from this file's own design,
+      against current `main`) — [ ] compiles clean (`-Werror`), not yet
+      re-verified in the new clone
+- [ ] Fix proven correct on a live cluster (not just claimed) — pending
+      redo, see `## Test plan`
+- [x] New regression test added (schema-collision test reapplied) — [ ]
+      actually run against a live cluster, not yet redone
+- [x] **Push the branch to a durable location** — done eagerly this time,
+      *before* the live-cluster rebuild: `t726-remove-mvname-column`
+      pushed to `xinzweb/cloudberrydb` (fork of `apache/cloudberry`),
+      commits `dec16ab6` (catalog fix) → `c26383e9` (test rename), based
+      on `apache/cloudberry@867c6a14`.
 - [ ] `cloudberry-license-check` run for real (`mvn apache-rat:check`) —
       currently only reasoned about, not executed
 - [ ] `cloudberry-pr-checklist` walked before opening
@@ -229,7 +238,8 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ## Repo file references
 
 All paths relative to the `apache/cloudberry` repo root (not this hub
-repo). Base commit `eaf8e256` (`main`, fetched 2026-08-27).
+repo). Base commit `867c6a14` (`main`, fetched 2026-09-02 — supersedes the
+original `eaf8e256`, lost with its clone; see `## Where the work lives`).
 
 | File | Change | Purpose |
 | --- | --- | --- |
@@ -246,14 +256,20 @@ repo). Base commit `eaf8e256` (`main`, fetched 2026-08-27).
 
 ## Where the work lives
 
-- Canonical clone: `/private/tmp/claude-501/-Users-xlj-workspace-xinzweb-apache-skills/3cddcb20-c202-4811-bbe6-09b2f795df6f/scratchpad/cloudberry`,
-  branch `t726-remove-mvname-column`, commits `c9149a2c` → `cfb6c9cd`.
-- Build/validation copy (kept in sync, used for the live-cluster tests
-  above): `/Users/xlj/tmp-t726-build/cloudberry`. Companion build tooling
-  clone: `/Users/xlj/tmp-t726-build/2026-cfp-coc-asia`
-  (`Synx-Data-Labs/2026-cfp-coc-asia`, unmodified).
-- Both are ephemeral scratch locations — see the unpushed-branch Done
-  criteria item above.
+- **Durable (current)**: `xinzweb/cloudberrydb` (fork of `apache/cloudberry`),
+  branch `t726-remove-mvname-column`, commits `dec16ab6` → `c26383e9`,
+  based on `apache/cloudberry@867c6a14`. Pushed 2026-09-02, before the
+  live-cluster rebuild — not after, per the incident below.
+- Ephemeral working clone (this session): `/tmp/T20260828-134911-cloudberry726-target`.
+- **2026-08-27/28 originals — confirmed unrecoverable (2026-09-02)**: the
+  canonical scratch clone (`/private/tmp/claude-501/.../scratchpad/cloudberry`)
+  and its build/validation copy (moved by the user to
+  `/tmp/tmp-t726-build/cloudberry`, companion tooling clone
+  `/tmp/tmp-t726-build/2026-cfp-coc-asia`) both had `.git` silently
+  hollowed out (0 objects/refs/logs) despite the directory tree surviving
+  — the two original commits (`c9149a2c`, `cfb6c9cd`) and all live-cluster
+  test evidence are gone. Root-cause + prevention now tracked as
+  `synx-skills` [T20260902-167059](https://github.com/Synx-Data-Labs/synx-skills/pull/254).
 
 ## Skills invoked
 
