@@ -203,12 +203,14 @@ themselves are unchanged, only the completed/pending status resets):**
 - [x] Fix designed, with alternatives-rejected reasoning, per maintainer +
       user input during this session
 - [x] Patch written (reapplied 2026-09-02 from this file's own design,
-      against current `main`) — [ ] compiles clean (`-Werror`), not yet
-      re-verified in the new clone
+      against current `main`)
+- [ ] Patch compiles clean (`-Werror`) — not yet re-verified in the new
+      clone
 - [ ] Fix proven correct on a live cluster (not just claimed) — pending
       redo, see `## Test plan`
-- [x] New regression test added (schema-collision test reapplied) — [ ]
-      actually run against a live cluster, not yet redone
+- [x] New regression test added (schema-collision test reapplied)
+- [ ] New regression test actually run against a live cluster — not yet
+      redone
 - [x] **Push the branch to a durable location** — done eagerly this time,
       *before* the live-cluster rebuild: `t726-remove-mvname-column`
       pushed to `xinzweb/cloudberrydb` (fork of `apache/cloudberry`),
