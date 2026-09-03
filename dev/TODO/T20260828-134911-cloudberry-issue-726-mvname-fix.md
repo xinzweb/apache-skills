@@ -184,9 +184,14 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 
 ## Test plan
 
-**Re-verification needed (2026-09-02 redo — the 2026-08-27/28 session's
-live-cluster evidence below was lost with its ephemeral clone; the checks
-themselves are unchanged, only the completed/pending status resets):**
+**Superseded twice — first by the 2026-09-02 redo (the 2026-08-27/28
+session's live-cluster evidence was lost with its ephemeral clone), then
+by the 2026-09-03 design rework (additive-only, not a column removal —
+see `## Status`). Several items below substantively changed, not just
+their checkbox status: `aqumv.sql`/`pax_storage`/`singlenode_regress`
+went from "needs independent verification" to "not touched by this
+design," and a `COMMENT ON` deprecation check was added that didn't
+exist before.**
 
 All items below verified live against the **current, additive-only**
 design (commits `cf5a0a9e` → `1fae8eb5`), on a real 6-segment `gpdemo`
@@ -281,7 +286,7 @@ All paths relative to the `apache/cloudberry` repo root (not this hub
 repo). Base commit `867c6a14` (`main`, fetched 2026-09-02 — supersedes the
 original `eaf8e256`, lost with its clone; see `## Where the work lives`).
 
-Current (additive-only) design — 3 files, +117/−1:
+Current (additive-only) design — 4 files, +117/−1:
 
 | File | Change | Purpose |
 | --- | --- | --- |
@@ -341,5 +346,6 @@ remove-`mvname` approach — see `## Status`): `gp_matview_aux.h`,
   change (see `## Test plan`/`## Done criteria`) — flagged as
   substantial AI generation touching a high-risk (catalog) area, per
   the skill's own guidance
-- `cloudberry-license-check`: read, not executed (`mvn` unavailable) — see
-  `## Done criteria`
+- `cloudberry-license-check`: run for real — Homebrew Maven installed
+  this session (`mvn` was previously unavailable), `mvn apache-rat:check`
+  passed clean (`Unapproved: 0`) — see `## Done criteria`
