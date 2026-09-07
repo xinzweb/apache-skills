@@ -1,11 +1,11 @@
 ---
-status: Coding
+status: Review
 scheduled: 2026-08-31
 estimation: 2h
 source: T20260810-723411's "Pick at least one real item" list (issue #726 flagged "Not attempted this session") + this conversation, 2026-08-27/28
 related: T20260810-723411
 target-repo: apache/cloudberry
-description: Fix apache/cloudberry#726 (gp_matview_aux.mvname schema confusion) — design, patch, and live validation done; not yet pushed/opened as a PR
+description: Fix apache/cloudberry#726 (gp_matview_aux.mvname schema confusion) — PR opened, awaiting maintainer review
 claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ---
 
@@ -299,6 +299,17 @@ Not touched by the current design (all touched under the now-superseded
 remove-`mvname` approach — see `## Status`): `gp_matview_aux.h`,
 `gp_matview_aux.c`, `tablecmds.c`, `aqumv.sql`/`aqumv.out` (both copies),
 `singlenode_regress/matview_data.sql`/`.out`.
+
+## Cross-repo work
+
+- Implementation: [apache/cloudberry#1970](https://github.com/apache/cloudberry/pull/1970)
+  (`xinzweb:t726-remove-mvname-column`) — opened 2026-09-07. Requesting
+  review from the `cloudberry-committers` GitHub team was left unchecked
+  in the PR body: outside contributors typically can't request a team as
+  reviewer without write access to the repo (untested here — noting it
+  rather than claiming it was done).
+- Live-cluster validation container (`t726-cluster`, local Docker) torn
+  down 2026-09-07 after the PR opened successfully; no longer needed.
 
 ## Where the work lives
 
