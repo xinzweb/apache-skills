@@ -213,9 +213,14 @@ built from this branch:
       `contrib/pax_storage`), `ic-resgroup-v2` (`resgroup_cpu_max_percent`),
       and two `ic-recovery` jobs (`t/019_replslot_limit.pl` subtests 8-9).
       None touch matview code. Evidence gathered so far:
-      - `main` itself independently failed `ic-resgroup-v2` and
-        `pax-ic-isolation2-opt-off` on 2026-09-07, in the same job
-        categories, with no relation to this PR.
+      - `main` itself independently failed `ic-resgroup-v2` — the exact
+        same job — on 2026-09-07, with no relation to this PR. It also
+        failed `pax-ic-isolation2-opt-off` that day, which is a sibling
+        variant of our failing `pax-ic-isolation2-opt-on` (same
+        `contrib/pax_storage` isolation2 suite, opposite optimizer GUC
+        setting) rather than the identical job — weaker evidence, but
+        still points at that test suite being flaky on `main` in
+        general, independent of this PR.
       - Local reproduction of the exact CI-failing `autovacuum-analyze`
         test (same scope, same PR commit `f4a5556`) **passed cleanly**
         (56s, no crash) — did not reproduce CI's segfault.
