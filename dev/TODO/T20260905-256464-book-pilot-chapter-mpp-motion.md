@@ -34,12 +34,23 @@ related: T20260828-134911
   role). Chosen as the most distinctive, highest-payoff Cloudberry-specific
   subsystem, and one that ties directly to real, capturable `EXPLAIN`
   output rather than requiring only static code reading.
-- **Location**: a new `book/` directory in this repo (`apache-skills`).
-- Done looks like: a chapter-length markdown document in `book/`, citing
-  real `file:line` references from the `apache/cloudberry` source (not
-  paraphrased from memory), with at least one worked example using real,
-  live-captured `EXPLAIN` output (not fabricated) — reviewed by the user
-  to decide whether to continue with further chapters as follow-up tasks.
+- **Location**: its own dedicated repo, not a `book/` directory inside
+  this repo — a separate repo is easier to open up for outside
+  contribution and to build up over time, without coupling the book's
+  growth to this repo's own task/skill churn. This repo (`apache-skills`)
+  is public, so the new repo's exact name/location and any private
+  publishing counterpart are intentionally not named here; record just
+  the public repo's URL back into this file once created.
+- **Publishing target**: synxdata.com. Mechanism (build pipeline, CMS,
+  static-site generator, etc.) not yet decided — out of scope for this
+  pilot-chapter task, which is just the chapter content; publishing
+  plumbing is a follow-up once the format/depth proves out.
+- Done looks like: a chapter-length markdown document in the new repo,
+  citing real `file:line` references from the `apache/cloudberry` source
+  (not paraphrased from memory), with at least one worked example using
+  real, live-captured `EXPLAIN` output (not fabricated) — reviewed by the
+  user to decide whether to continue with further chapters as follow-up
+  tasks, and whether/how to wire up synxdata.com publishing.
 
 ## Context
 
