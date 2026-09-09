@@ -1,8 +1,10 @@
 ---
-status: Open
+status: Coding
 estimation: 2d
 source: this conversation, 2026-09-05
 related: T20260828-134911
+claimed_by: shines-laptop-1.tail472c99.ts.net:/Users/xlj/workspace/xinzweb/apache-skills
+scheduled: 2026-09-07
 ---
 
 # T20260905-256464: Write pilot book chapter — MPP query execution & Motion nodes
