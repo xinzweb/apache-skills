@@ -38,13 +38,14 @@ related: T20260828-134911
   this repo — a separate repo is easier to open up for outside
   contribution and to build up over time, without coupling the book's
   growth to this repo's own task/skill churn. This repo (`apache-skills`)
-  is public, so the new repo's exact name/location and any private
-  publishing counterpart are intentionally not named here; record just
-  the public repo's URL back into this file once created.
-- **Publishing target**: synxdata.com. Mechanism (build pipeline, CMS,
-  static-site generator, etc.) not yet decided — out of scope for this
-  pilot-chapter task, which is just the chapter content; publishing
-  plumbing is a follow-up once the format/depth proves out.
+  is public, so the new repo's exact name/URL is intentionally not
+  named here yet; record it back into this file once created.
+- **Publishing target**: synxdata.com — named here since it's the
+  company's public site, not a secret. The build/publishing mechanism
+  (pipeline, CMS, static-site generator, etc.) is not yet decided and is
+  out of scope for this pilot-chapter task, which is just the chapter
+  content; publishing plumbing is a follow-up once the format/depth
+  proves out.
 - Done looks like: a chapter-length markdown document in the new repo,
   citing real `file:line` references from the `apache/cloudberry` source
   (not paraphrased from memory), with at least one worked example using
