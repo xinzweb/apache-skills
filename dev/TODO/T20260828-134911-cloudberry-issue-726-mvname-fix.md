@@ -5,7 +5,7 @@ estimation: 2h
 source: T20260810-723411's "Pick at least one real item" list (issue #726 flagged "Not attempted this session") + this conversation, 2026-08-27/28
 related: T20260810-723411
 target-repo: apache/cloudberry
-description: Fix apache/cloudberry#726 (gp_matview_aux.mvname schema confusion) — PR opened, awaiting maintainer review
+description: Fix apache/cloudberry#726 (gp_matview_aux.mvname schema confusion) — PR opened, CI has 4 unrelated failures under investigation
 claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 ---
 
@@ -17,45 +17,20 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 - **Problem**: `gp_matview_aux.mvname` is populated from a bare, non-schema-qualified
   relation name, so two materialized views of the same name in different
   schemas produce identical, indistinguishable `mvname` values.
-- **Solution (revised 2026-09-03 — see `## Status`)**: additive only. Add a
-  new `gp_matviews` view — modeled on Postgres's own `pg_matviews` — that
-  live-joins `gp_matview_aux` → `pg_class` → `pg_namespace` for a correctly
-  schema-qualified name. `gp_matview_aux.mvname` itself is left completely
-  unchanged (still populated, still synced on rename via the existing
-  `mvaux_rename()`) and marked deprecated via `COMMENT ON COLUMN`, pointing
-  at `gp_matviews`. The earlier design (remove `mvname` + `mvaux_rename()`
-  entirely) was implemented and live-validated first, then reworked to this
-  smaller, non-breaking shape after user review — see `## Status` for why.
-- **Status (updated 2026-09-03)**: the 2026-08-27/28 session's design,
-  patch, and live-cluster validation were never pushed and were lost when
-  their ephemeral `/tmp` clones' `.git` silently hollowed out across a
-  session boundary (see `## Where the work lives` — incident now tracked
-  as `synx-skills` `T20260902-167059`, filed to fix the underlying
-  ephemeral-clone gap). The design itself was fully recoverable from this
-  file's own `## Solution` (exact diffs), so the catalog fix and
-  mechanical test-file rename were **reapplied from scratch** against
-  current `apache/cloudberry@main` (`867c6a14`) and **pushed immediately**
-  to a durable fork (`xinzweb/cloudberrydb`, branch
-  `t726-remove-mvname-column`) — before starting the live-cluster rebuild,
-  per the lesson from the incident — then fully live-validated end to end
-  (commit `bf918702`, see the now-superseded validation below).
-- **Then reworked (2026-09-03), before opening the PR**: the user asked
-  why this needed to be a breaking change instead of an additive fix, and
-  pointed out `gp_matview_aux` is a real catalog table (not a view) — a
-  plain column could be added to it. Investigated: a new stored/synced
-  `mvschema` column would reproduce the exact bug class this issue is
-  about (verified — `grep` found **zero** existing sync code for a
-  matview's schema anywhere in `tablecmds.c`'s `AlterTableNamespace`/`SET
-  SCHEMA` path, since `mvname` never tracked schema; a new synced column
-  would need to add that from scratch and could go stale the same way).
-  A live-resolved *view* avoids that permanently — so the view was kept,
-  but the column-removal was dropped: `mvname`, `mvaux_rename()`, and its
-  index are now **left completely untouched**, deprecated via
-  `COMMENT ON COLUMN` instead of removed. Branch history was rewritten
-  (safe — no PR was open yet) and re-validated live from scratch on the
-  same already-provisioned cluster (much faster: no toolchain rebuild
-  needed, just a recompile). See `## Test plan` for the current,
-  superseding validation.
+- **Solution**: additive only. Add a new `gp_matviews` view — modeled on
+  Postgres's own `pg_matviews` — that live-joins `gp_matview_aux` →
+  `pg_class` → `pg_namespace` for a correctly schema-qualified name.
+  `gp_matview_aux.mvname` itself is left completely unchanged (still
+  populated, still synced on rename via the existing `mvaux_rename()`)
+  and marked deprecated via `COMMENT ON COLUMN`, pointing at
+  `gp_matviews`.
+- **Status**: [apache/cloudberry#1970](https://github.com/apache/cloudberry/pull/1970)
+  open since 2026-09-07. CI has 4 failing jobs (`pax-ic-isolation2-opt-on`,
+  `ic-resgroup-v2`, two `ic-recovery` variants) — none touch matview code;
+  investigation (see `## Test plan`) points to pre-existing environment
+  flakiness, not this patch. `ic-cbdb-parallel` (the job that runs
+  `matview_data.sql`, the test this patch actually adds) passed on every
+  platform. Awaiting resolution of the CI question and maintainer review.
 
 ## Problem
 
@@ -123,10 +98,14 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
   sharing that tag name (the `image:` Makefile target unconditionally
   rebuilds it) — worked around by invoking the underlying `docker run`
   directly instead of through `make`.
+- **Colima on this host now runs off the external drive**
+  (`/Volumes/1TB20260908`, `~/.colima` symlinked there) after an earlier
+  internal-disk-space exhaustion — see `.claude/skills/cloudberry-ic-colima`
+  (once written) for the full local-CI-repro playbook and its gotchas
+  (native arm64 image required, correct container flags for cgroup v2
+  visibility, exact CI-matching `make` targets per job).
 
 ## Solution
-
-**Current (additive-only, see `## Status` for the design history):**
 
 - **New view** — `src/backend/catalog/system_views.sql`, placed directly
   after `pg_matviews` (same file, same pattern):
@@ -162,20 +141,18 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
   - *Prefix schema into the existing `mvname` column* (the maintainer's
     literal "easy way" suggestion) — rejected for the NAMEDATALEN=64
     truncation/re-collision risk.
-  - *Add a new stored/synced `mvschema` column* instead of a view — this
-    was the user's first alternative to weigh against the (now-superseded)
-    removal approach. Rejected: verified via `grep` that **zero** existing
-    code syncs a matview's schema anywhere in `tablecmds.c`'s
+  - *Add a new stored/synced `mvschema` column* instead of a view —
+    rejected: verified via `grep` that **zero** existing code syncs a
+    matview's schema anywhere in `tablecmds.c`'s
     `AlterTableNamespace`/`SET SCHEMA` path (nothing needed to, since
     `mvname` never tracked schema) — a new synced column would need that
     sync code added from scratch, and if ever missed, would go stale the
     same way `mvname` already does. A live-resolved view cannot go stale
     by construction.
-  - *Remove `mvname` entirely* (the original 2026-08-27/28 design, fully
-    implemented and live-validated before being reworked) — rejected on
-    user review as unnecessarily breaking for an undocumented-but-real
-    catalog column with unknown external direct-SQL consumers, when the
-    additive form fixes the same bug with a smaller, non-breaking diff.
+  - *Remove `mvname` entirely* — rejected as unnecessarily breaking for
+    an undocumented-but-real catalog column with unknown external
+    direct-SQL consumers, when the additive form fixes the same bug with
+    a smaller, non-breaking diff.
   - *Extend `pg_matviews` itself* rather than adding a new `gp_matviews`
     view — rejected to avoid changing a name/column-set contract that
     external pg-ecosystem tooling may depend on being vanilla-Postgres-
@@ -184,18 +161,9 @@ claimed_by: Shines-Laptop.local:/Users/xlj/workspace/xinzweb/apache-skills
 
 ## Test plan
 
-**Superseded twice — first by the 2026-09-02 redo (the 2026-08-27/28
-session's live-cluster evidence was lost with its ephemeral clone), then
-by the 2026-09-03 design rework (additive-only, not a column removal —
-see `## Status`). Several items below substantively changed, not just
-their checkbox status: `aqumv.sql`/`pax_storage`/`singlenode_regress`
-went from "needs independent verification" to "not touched by this
-design," and a `COMMENT ON` deprecation check was added that didn't
-exist before.**
-
-All items below verified live against the **current, additive-only**
-design (commits `cf5a0a9e` → `1fae8eb5`), on a real 6-segment `gpdemo`
-cluster built from this branch — 2026-09-03:
+All items below verified live against the current, additive-only design
+(commits `cf5a0a9e` → `1fae8eb5`), on a real 6-segment `gpdemo` cluster
+built from this branch:
 
 - [x] Compiles clean with `-Werror` — real Docker build (`make dist`)
       completed cleanly against `apache/cloudberry@867c6a14` + this patch;
@@ -223,51 +191,68 @@ cluster built from this branch — 2026-09-03:
       addition** (66 insertions, 0 deletions); the rest of the file's
       diff (pre-existing 2-vs-3-segment topology noise in unrelated
       sections) is untouched/unclaimed, as before
-- [x] `src/test/regress/sql/aqumv.sql` — **not touched by this design**
-      (only needed changes under the now-superseded remove-`mvname`
-      approach); live diff against its checked-in `.out` confirmed via
-      `grep` to contain **zero** `gp_matview`/`mvname`/`mvschema` hits —
-      100% pre-existing drift (GUC-ordering in `EXPLAIN VERBOSE`, new
-      `DISTRIBUTED BY` notices, topology Motion labels), unrelated to this
-      patch and correctly left unmodified
-- [x] `misc_sanity.out` needs **zero** changes — confirmed by an actual
-      live diff: byte-identical, zero-byte diff
+- [x] `src/test/regress/sql/aqumv.sql` — not touched by this design; live
+      diff against its checked-in `.out` confirmed via `grep` to contain
+      **zero** `gp_matview`/`mvname`/`mvschema` hits — 100% pre-existing
+      drift (GUC-ordering in `EXPLAIN VERBOSE`, new `DISTRIBUTED BY`
+      notices, topology Motion labels), unrelated to this patch and
+      correctly left unmodified
+- [x] `misc_sanity.out` needs zero changes — confirmed by an actual live
+      diff: byte-identical, zero-byte diff
 - [x] `contrib/pax_storage/src/test/regress/sql/aqumv.sql` and
-      `src/test/singlenode_regress/sql/matview_data.sql` — **not touched**
-      by this design (they only needed the mechanical rename under the
-      now-superseded approach); no action needed, nothing to flag
-- [x] `mvn apache-rat:check` — run for real (Homebrew Maven installed
-      this session): `Unapproved: 0, unknown: 0` on both the final commit
-      and after the `.out` file addition
-- [ ] Live-cluster validation on the official Rocky Linux 8+/Ubuntu
-      20.04+ toolchain (this session used an unofficial Docker
-      arm64-portable build) — the real apache/cloudberry CI matrix is the
-      authoritative confirmation once the PR is opened
+      `src/test/singlenode_regress/sql/matview_data.sql` — not touched by
+      this design; no action needed
+- [x] `mvn apache-rat:check` — `Unapproved: 0, unknown: 0` on both the
+      final commit and after the `.out` file addition
+- [x] Live-cluster validation on the official Rocky Linux 8+/Ubuntu
+      20.04+ toolchain — real apache/cloudberry CI on PR #1970:
+      `ic-cbdb-parallel` (runs `src/test/regress`, where `matview_data.sql`
+      lives) passed on Rocky 8, Rocky 10, and Debian/Ubuntu.
+- [ ] **CI has 4 unrelated failures under investigation**:
+      `pax-ic-isolation2-opt-on` (segfault in `autovacuum-analyze`,
+      `contrib/pax_storage`), `ic-resgroup-v2` (`resgroup_cpu_max_percent`),
+      and two `ic-recovery` jobs (`t/019_replslot_limit.pl` subtests 8-9).
+      None touch matview code. Evidence gathered so far:
+      - `main` itself independently failed `ic-resgroup-v2` and
+        `pax-ic-isolation2-opt-off` on 2026-09-07, in the same job
+        categories, with no relation to this PR.
+      - Local reproduction of the exact CI-failing `autovacuum-analyze`
+        test (same scope, same PR commit `f4a5556`) **passed cleanly**
+        (56s, no crash) — did not reproduce CI's segfault.
+      - `ic-resgroup-v2` could not be locally reproduced: a real
+        environment incompatibility (cgroup v2 delegation fails under
+        this nested-VM setup, `cgroup.c:341`) blocks the test mechanism
+        itself, unrelated to the patch (which touches zero resgroup
+        code).
+      - `ic-recovery` not cleanly locally reproduced (run was confounded
+        by a concurrent cluster rebuild); no direct `main`-branch
+        corroboration found in the CI history sampled, though the patch
+        touches zero replication/recovery code.
+      - Conclusion pending: strong evidence these are pre-existing/
+        environment flakiness, not caused by this patch, but not yet
+        formally resolved on the PR (comment + possible re-run request).
 
 ## Done criteria
 
 - [x] Root cause identified and cited to `file:line` + the exact PR review
       comment that first flagged it
 - [x] Fix designed, with alternatives-rejected reasoning, per maintainer +
-      user input during this session (twice — see `## Status`)
+      user input
 - [x] Patch written and compiles clean (`-Werror`) — verified live
 - [x] Fix proven correct on a live cluster (not just claimed) — verified
       live, see `## Test plan`
 - [x] New regression test added and actually run against a live cluster,
       expected output captured from the real transcript
-- [x] **Push the branch to a durable location** — done eagerly, *before*
-      each live-cluster rebuild: `t726-remove-mvname-column` on
-      `xinzweb/cloudberrydb` (fork of `apache/cloudberry`), current HEAD
-      `1fae8eb5` (history rewritten once, pre-PR, when the design changed
-      — see `## Status`), based on `apache/cloudberry@867c6a14`.
+- [x] Branch pushed to a durable location before each live-cluster
+      rebuild — see `## Where the work lives`
 - [x] `cloudberry-license-check` run for real (`mvn apache-rat:check`) —
       `Unapproved: 0`
 - [x] `cloudberry-ai-disclosure` checklist walked (§2.a–f) — AI-disclosure
-      checkbox will be ticked in the PR
+      checkbox ticked in the PR
 - [x] `cloudberry-pr-checklist` walked; PR title/body drafted
-- [ ] PR opened against `apache/cloudberry` — **pending final user
-      approval of the revised (additive-only) PR body** before `gh pr
-      create` is run
+- [x] PR opened against `apache/cloudberry` — [#1970](https://github.com/apache/cloudberry/pull/1970)
+- [ ] CI's 4 unrelated-looking failures resolved (re-run, comment, or
+      accepted as pre-existing — see `## Test plan`)
 - [ ] Maintainer review addressed
 
 ## Root cause
@@ -283,10 +268,9 @@ cluster built from this branch — 2026-09-03:
 ## Repo file references
 
 All paths relative to the `apache/cloudberry` repo root (not this hub
-repo). Base commit `867c6a14` (`main`, fetched 2026-09-02 — supersedes the
-original `eaf8e256`, lost with its clone; see `## Where the work lives`).
+repo). Base commit `867c6a14` (`main`).
 
-Current (additive-only) design — 4 files, +117/−1:
+4 files changed, +117/−1:
 
 | File | Change | Purpose |
 | --- | --- | --- |
@@ -295,9 +279,8 @@ Current (additive-only) design — 4 files, +117/−1:
 | `src/test/regress/sql/matview_data.sql` | +35 lines | new self-contained schema-collision test (nothing else in this file touched) |
 | `src/test/regress/expected/matview_data.out` | +66 lines | real captured output for the new test, spliced in at the exact insertion point — confirmed a pure addition vs. upstream |
 
-Not touched by the current design (all touched under the now-superseded
-remove-`mvname` approach — see `## Status`): `gp_matview_aux.h`,
-`gp_matview_aux.c`, `tablecmds.c`, `aqumv.sql`/`aqumv.out` (both copies),
+Not touched by this design: `gp_matview_aux.h`, `gp_matview_aux.c`,
+`tablecmds.c`, `aqumv.sql`/`aqumv.out` (both copies),
 `singlenode_regress/matview_data.sql`/`.out`.
 
 ## Cross-repo work
@@ -309,54 +292,40 @@ remove-`mvname` approach — see `## Status`): `gp_matview_aux.h`,
   reviewer without write access to the repo (untested here — noting it
   rather than claiming it was done).
 - Live-cluster validation container (`t726-cluster`, local Docker) torn
-  down 2026-09-07 after the PR opened successfully; no longer needed.
+  down 2026-09-07 after the PR opened successfully.
 
 ## Where the work lives
 
-- **Durable (current)**: `xinzweb/cloudberrydb` (fork of `apache/cloudberry`),
-  branch `t726-remove-mvname-column`, HEAD `1fae8eb5` (`cf5a0a9e` the
-  additive-only rework + `1fae8eb5` its `.out` capture), based on
-  `apache/cloudberry@867c6a14`. History was rewritten once, pre-PR (safe —
-  no PR was open yet), when the design changed from removal to additive —
-  the superseded commits (`dec16ab6`→`bf918702`, fully implemented and
-  live-validated before being reworked) are only in the reflog now, not on
-  any remote.
-- Ephemeral working clone (this session): `/tmp/T20260828-134911-cloudberry726-target`.
-- Live demo cluster (this session, for re-validation after the rework):
-  Docker container `t726-cluster` on this host, built from the current
-  HEAD — still running as of this checkpoint, not yet torn down.
-- **2026-08-27/28 originals — confirmed unrecoverable (2026-09-02)**: the
-  canonical scratch clone (`/private/tmp/claude-501/.../scratchpad/cloudberry`)
-  and its build/validation copy (moved by the user to
-  `/tmp/tmp-t726-build/cloudberry`, companion tooling clone
-  `/tmp/tmp-t726-build/2026-cfp-coc-asia`) both had `.git` silently
-  hollowed out (0 objects/refs/logs) despite the directory tree surviving
-  — the two original commits (`c9149a2c`, `cfb6c9cd`) and all live-cluster
-  test evidence are gone. Root-cause + prevention now tracked as
+- **Durable**: `xinzweb/cloudberrydb` (fork of `apache/cloudberry`),
+  branch `t726-remove-mvname-column`, HEAD `1fae8eb5`, based on
+  `apache/cloudberry@867c6a14`.
+- An earlier, separately-implemented version of this fix (design:
+  removing `mvname` entirely rather than the current additive approach)
+  was lost to an ephemeral-clone `.git`-hollowing incident before being
+  pushed anywhere durable — root-cause + prevention tracked as
   `synx-skills` [T20260902-167059](https://github.com/Synx-Data-Labs/synx-skills/pull/254).
+  No work is currently at risk; the design was fully recoverable from
+  this file's own exact diffs and reimplemented from scratch, pushed
+  eagerly this time.
+- No ephemeral working clones currently active for this task.
 
 ## Skills invoked
 
 - TDD (`superpowers:test-driven-development`): skill not present in this
   environment; followed the practice manually against a real compiler +
-  live cluster instead of a local unit-test harness (this is C/catalog
-  code, not the Python MCP adapter T20260827-107079 could unit-test) —
-  ran the actual regression test, found a real bug in it, fixed it, reran
+  live cluster instead of a local unit-test harness — ran the actual
+  regression test, found a real bug in it, fixed it, reran
 - Verification (`superpowers:verification-before-completion`): skill not
   present; self-verified via live Docker build + live cluster + live
-  regression-test runs at every step rather than static review alone —
-  see `## Test plan`'s repeated "not just claimed"/"confirmed both by
-  static reasoning and by" language
-- Systematic debugging (`superpowers:systematic-debugging`): yes — the
-  `t1`-already-dropped test failure and the ICU/image-clobbering build
-  failures were each diagnosed from the actual error message to a
-  specific root cause before being fixed, not trial-and-error
+  regression-test runs at every step rather than static review alone
+- Systematic debugging (`superpowers:systematic-debugging`): yes — build
+  failures (ICU, image-clobbering) and CI-failure triage were each
+  diagnosed from the actual error message to a specific root cause before
+  being fixed, not trial-and-error
 - Receiving code review (`superpowers:receiving-code-review`): n/a — no
-  PR opened yet
+  maintainer review comments yet
 - `cloudberry-ai-disclosure`: walked the §2 pre-PR checklist against this
-  change (see `## Test plan`/`## Done criteria`) — flagged as
-  substantial AI generation touching a high-risk (catalog) area, per
-  the skill's own guidance
-- `cloudberry-license-check`: run for real — Homebrew Maven installed
-  this session (`mvn` was previously unavailable), `mvn apache-rat:check`
-  passed clean (`Unapproved: 0`) — see `## Done criteria`
+  change — flagged as substantial AI generation touching a high-risk
+  (catalog) area, per the skill's own guidance
+- `cloudberry-license-check`: run for real (`mvn apache-rat:check`) —
+  `Unapproved: 0`
